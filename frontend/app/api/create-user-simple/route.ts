@@ -6,20 +6,25 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+/**
+ * Obtiene el cliente admin de Supabase
+ * Validación lazy para evitar errores durante el build
+ */
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing required environment variables')
-}
-
-// Cliente admin
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required environment variables')
   }
-})
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +36,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Obtener cliente admin
+    const supabaseAdmin = getSupabaseAdmin()
 
     console.log('🔍 Creating user with alias:', alias)
 
