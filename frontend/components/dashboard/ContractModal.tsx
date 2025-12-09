@@ -86,6 +86,7 @@ export default function ContractModal({
           base_sena: true,
     fecha_ingreso: '',
     tipo_contrato: '',
+    arl_risk_level: null,
     fecha_fin: '',
     tipo_salario: '',
     moneda: 'COP',
@@ -569,6 +570,7 @@ export default function ContractModal({
           base_sena: contract.base_sena || false,
           fecha_ingreso: contract.fecha_ingreso || '',
           tipo_contrato: contract.tipo_contrato || '',
+          arl_risk_level: contract.arl_risk_level || null,
           fecha_fin: contract.fecha_fin || '',
           tipo_salario: contract.tipo_salario || '',
           moneda: contract.moneda && contract.moneda !== 'COP' && contract.moneda !== 'EUR'
@@ -641,6 +643,7 @@ export default function ContractModal({
           base_sena: true,
           fecha_ingreso: '',
           tipo_contrato: '',
+          arl_risk_level: null,
           fecha_fin: '',
           tipo_salario: '',
           moneda: 'COP',
@@ -1272,6 +1275,7 @@ export default function ContractModal({
         base_sena: formData.base_sena,
         fecha_ingreso: formData.fecha_ingreso || null,
         tipo_contrato: formData.tipo_contrato || null,
+        arl_risk_level: formData.arl_risk_level || null,
         fecha_fin: formData.fecha_fin || null,
         tipo_salario: formData.tipo_salario || null,
         moneda: formData.moneda === 'otro' && formData.moneda_custom 
@@ -1855,6 +1859,29 @@ export default function ContractModal({
                           </div>
                         )}
                       </div>
+                    )}
+                  </div>
+
+                  {/* Nivel de Riesgo ARL */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Nivel de Riesgo ARL
+                    </label>
+                    <select
+                      value={formData.arl_risk_level || ''}
+                      onChange={(e) => !isReadOnly && handleInputChange('arl_risk_level', e.target.value ? parseInt(e.target.value) : null)}
+                      {...getInputProps('arl_risk_level')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                    >
+                      <option value="">Seleccionar nivel de riesgo...</option>
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5</option>
+                    </select>
+                    {errors.arl_risk_level && (
+                      <p className="text-red-600 text-xs mt-1">{errors.arl_risk_level}</p>
                     )}
                   </div>
 

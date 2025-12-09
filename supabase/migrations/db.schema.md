@@ -270,6 +270,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `base_sena` | BOOLEAN | Aporta al SENA (default: true) | `true` |
 | `fecha_ingreso` | DATE | Fecha de ingreso | `2025-01-15` |
 | `tipo_contrato` | TEXT | Tipo de contrato (texto libre) | `Indefinido`, `Término Fijo`, `Por Obra` |
+| `arl_risk_level` | INTEGER | Nivel de riesgo ARL (1-5). Puede modificarse mediante novedades | `1`, `2`, `3`, `4`, `5` |
 | `fecha_fin` | DATE | Fecha de terminación | `2025-12-31` |
 | `tipo_salario` | TEXT | Tipo de salario (texto libre) | `Ordinario`, `Integral`, `Mixto` |
 | `moneda` | TEXT | Moneda del salario (default: COP) | `COP`, `EUR`, u otra moneda personalizada |

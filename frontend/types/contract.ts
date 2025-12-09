@@ -26,6 +26,7 @@ export interface Contract {
   base_sena: boolean
   fecha_ingreso?: string | null
   tipo_contrato?: string | null
+  arl_risk_level?: number | null
   fecha_fin?: string | null
   // Estado de contratos fijos (períodos)
   contract_status?: {
