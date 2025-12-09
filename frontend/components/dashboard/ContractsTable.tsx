@@ -30,6 +30,7 @@ import {
 import { formatDateColombia } from '../../utils/dateUtils'
 import { ContractStatusCompact } from '../ui/ContractStatusBadges'
 import ContractApprovalButton from '../ui/ContractApprovalButton'
+import ContractAnulacionButton from '../ui/ContractAnulacionButton'
 import DeleteContractModal from '../ui/DeleteContractModal'
 import OnboardingDetailModal from '../ui/OnboardingDetailModal'
 import ConfirmationModal from '../ui/ConfirmationModal'
@@ -833,6 +834,15 @@ export default function ContractsTable({
                             />
                           )}
                           
+                          {/* Botón de anulación */}
+                          {canUpdate && !contract.archived_at && (
+                            <ContractAnulacionButton 
+                              contract={contract} 
+                              onSuccess={onUpdate}
+                              className="text-xs px-2 py-1 whitespace-nowrap"
+                            />
+                          )}
+                          
                           {/* Botón de novedades */}
                           {contract.status_aprobacion === 'aprobado' && !currentData.is_terminated && (
                             <NovedadButton
@@ -1441,6 +1451,17 @@ export default function ContractsTable({
                       <ContractApprovalButton 
                         contract={contract}
                         onSuccess={() => onApprove(contract)}
+                        className="px-3 py-2 text-sm font-medium"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Botón de anulación */}
+                  {canUpdate && !contract.archived_at && (
+                    <div className="flex-shrink-0">
+                      <ContractAnulacionButton 
+                        contract={contract}
+                        onSuccess={onUpdate}
                         className="px-3 py-2 text-sm font-medium"
                       />
                     </div>

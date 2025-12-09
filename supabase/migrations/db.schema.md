@@ -314,6 +314,9 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `status_aprobacion` | TEXT | Estado de aprobación (borrador, aprobado) | `borrador` |
 | `approved_at` | TIMESTAMPTZ | Fecha de aprobación | `2025-01-15 16:30:00` |
 | `approved_by` | UUID (FK) | Usuario que aprobó el contrato | `user-uuid` |
+| `archived_at` | TIMESTAMPTZ | Fecha de anulación/archivado (NULL si está activo) | `NULL` o `2025-01-20 15:30:00` |
+| `archived_by` | UUID (FK) | Usuario que anuló el contrato | `NULL` o `user-uuid` |
+| `motivo_anulacion` | TEXT | Motivo de anulación (obligatorio si está anulado) | `NULL` o `Empleado no se presentó a trabajar` |
 | `created_at` | TIMESTAMPTZ | Fecha de creación | `2025-01-15 10:00:00` |
 | `created_by` | UUID (FK) | Usuario que creó el registro | `user-uuid` |
 | `updated_at` | TIMESTAMPTZ | Fecha de última edición | `2025-01-15 14:30:00` |
@@ -324,6 +327,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 - `created_by` → `auth.users(id)`
 - `updated_by` → `auth.users(id)`
 - `approved_by` → `auth.users(id)`
+- `archived_by` → `auth.users(id)`
 
 **Restricciones:**
 - `UNIQUE(numero_contrato_helisa)` - Número de contrato único
@@ -332,6 +336,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 - Beneficiarios: madre, padre, cónyuge solo pueden ser 0 o 1
 - Estado de aprobación: solo puede ser 'borrador' o 'aprobado'
 - Lógica de aprobación: una vez aprobado no se puede editar ni eliminar
+- Lógica de archivado: si `archived_at` no es NULL, `archived_by` y `motivo_anulacion` deben tener valor
 - **ACTUALIZADO:** Los campos dropdown ahora permiten texto libre (sin restricciones CHECK)
 
 **Índices:**
@@ -340,6 +345,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 - `idx_contracts_empresa_final_id` - Filtro por empresa
 - `idx_contracts_nombres` - Búsqueda por nombres
 - `idx_contracts_fecha_ingreso` - Filtro por fecha de ingreso
+- `idx_contracts_archived_at` - Filtro para contratos no anulados (archived_at IS NULL)
 
 **Seguridad RLS:**
 - **Ver:** Usuarios con permiso `contracts.view`
@@ -356,7 +362,8 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 
 **Funciones del Sistema de Estados:**
 - `calculate_contract_status_vigencia(fecha_fin)` - Calcula si está activo/terminado
-- `approve_contract(contract_id, user_id)` - Función segura para aprobar contratos
+- `approve_contract(contract_id, user_id, contract_number)` - Función segura para aprobar contratos
+- `anular_contract(contract_id, anulador_user_id, motivo)` - Función segura para anular contratos (requiere motivo obligatorio)
 
 **Triggers:**
 - `trigger_contracts_updated_at` - Actualiza automáticamente `updated_at` y `updated_by`

@@ -28,6 +28,7 @@ import {
 import { formatDateColombia } from '../../utils/dateUtils'
 import { ContractStatusCompact } from '../ui/ContractStatusBadges'
 import ContractApprovalButton from '../ui/ContractApprovalButton'
+import ContractAnulacionButton from '../ui/ContractAnulacionButton'
 
 interface ContractsTableResponsiveProps {
   contracts: Contract[]
@@ -40,6 +41,7 @@ interface ContractsTableResponsiveProps {
   onEdit: (contract: Contract) => void
   onDelete: (contract: Contract) => void
   onAdd: () => void
+  onUpdate: () => void
   onApprovalChange: () => void
 }
 
@@ -149,6 +151,12 @@ export default function ContractsTableResponsive({
             <ContractApprovalButton
               contract={record}
               onSuccess={onApprovalChange}
+            />
+          )}
+          {canEdit && !record.archived_at && (
+            <ContractAnulacionButton
+              contract={record}
+              onSuccess={onUpdate}
             />
           )}
         </div>

@@ -100,9 +100,11 @@ export default function ContratosPage() {
       setLoadingRef(true)
       
       // Primero obtener los contratos (sin computed columns para evitar errores de cache)
+      // Filtrar contratos anulados (archived_at IS NULL)
       const { data: contractsData, error: contractsError } = await supabase
         .from('contracts')
         .select('*')
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
 
       if (contractsError) {

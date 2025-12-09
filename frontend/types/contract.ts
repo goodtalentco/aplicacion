@@ -84,6 +84,11 @@ export interface Contract {
   approved_at?: string | null
   approved_by?: string | null
   
+  // Campos de archivado/anulación
+  archived_at?: string | null
+  archived_by?: string | null
+  motivo_anulacion?: string | null
+  
   // Campos de auditoría
   created_at?: string
   updated_at?: string

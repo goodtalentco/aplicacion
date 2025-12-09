@@ -352,6 +352,7 @@ export default function ContractModal({
           email
         `)
         .eq('numero_identificacion', formData.numero_identificacion.trim())
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
         .limit(1)
 
