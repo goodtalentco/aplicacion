@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, User, FileText, CheckSquare, ChevronRight, Shield, AlertTriangle, Search } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
-import { Contract, getContractStatusConfig, calculateTotalRemuneration, formatCurrency } from '../../types/contract'
+import { Contract, getContractStatusConfig, calculateTotalRemuneration, formatCurrency, Auxilio } from '../../types/contract'
 import OCRButton from '../ocr/OCRButton'
 import ContractModalOnboarding from './ContractModalOnboarding'
 import CompanySelector from '../ui/CompanySelector'
@@ -43,6 +43,10 @@ export default function ContractModal({
 }: ContractModalProps) {
   const [currentTab, setCurrentTab] = useState(0)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Estados para el nuevo formulario de auxilios
+  const [nuevoAuxilioTipo, setNuevoAuxilioTipo] = useState<'salarial' | 'no_salarial'>('salarial')
+  const [nuevoAuxilioMonto, setNuevoAuxilioMonto] = useState('')
   
   // Estados para cálculos automáticos - valores por defecto mientras cargan
   const [salarioMinimo, setSalarioMinimo] = useState<number>(1300000)
@@ -92,11 +96,8 @@ export default function ContractModal({
     moneda: 'COP',
     moneda_custom: '',
     salario: 0,
-    auxilio_salarial: 0,
-    auxilio_salarial_concepto: '',
-    auxilio_no_salarial: 0,
-    auxilio_no_salarial_concepto: '',
-  auxilio_transporte: 0,
+    auxilios: [] as Auxilio[],
+    auxilio_transporte: 0,
   tiene_condicion_medica: false,
   condicion_medica_detalle: '',
   beneficiario_hijo: 0,
@@ -581,10 +582,27 @@ export default function ContractModal({
             ? contract.moneda 
             : '',
           salario: contract.salario || 0,
-          auxilio_salarial: contract.auxilio_salarial || 0,
-          auxilio_salarial_concepto: contract.auxilio_salarial_concepto || '',
-          auxilio_no_salarial: contract.auxilio_no_salarial || 0,
-          auxilio_no_salarial_concepto: contract.auxilio_no_salarial_concepto || '',
+          auxilios: contract.auxilios && Array.isArray(contract.auxilios) 
+            ? contract.auxilios 
+            : (() => {
+                // Migrar auxilios antiguos al nuevo formato
+                const auxilios: Auxilio[] = []
+                if (contract.auxilio_salarial && contract.auxilio_salarial > 0) {
+                  auxilios.push({
+                    tipo: 'salarial',
+                    monto: contract.auxilio_salarial,
+                    moneda: contract.moneda || 'COP'
+                  })
+                }
+                if (contract.auxilio_no_salarial && contract.auxilio_no_salarial > 0) {
+                  auxilios.push({
+                    tipo: 'no_salarial',
+                    monto: contract.auxilio_no_salarial,
+                    moneda: contract.moneda || 'COP'
+                  })
+                }
+                return auxilios
+              })(),
           auxilio_transporte: contract.auxilio_transporte || 0,
           tiene_condicion_medica: contract.tiene_condicion_medica || false,
           condicion_medica_detalle: contract.condicion_medica_detalle || '',
@@ -650,10 +668,7 @@ export default function ContractModal({
           moneda: 'COP',
           moneda_custom: '',
           salario: 0,
-          auxilio_salarial: 0,
-          auxilio_salarial_concepto: '',
-          auxilio_no_salarial: 0,
-          auxilio_no_salarial_concepto: '',
+          auxilios: [] as Auxilio[],
           beneficiario_hijo: 0,
           beneficiario_madre: 0,
           beneficiario_padre: 0,
@@ -682,6 +697,10 @@ export default function ContractModal({
       // Limpiar historial de períodos
       setPeriodosHistorial([])
       setContractFixedStatus(null)
+      
+      // Limpiar estados del formulario de auxilios
+      setNuevoAuxilioTipo('salarial')
+      setNuevoAuxilioMonto('')
     }
   }, [isOpen, contract, mode, companies])
 
@@ -1290,10 +1309,13 @@ export default function ContractModal({
           ? formData.moneda_custom.toUpperCase() 
           : (formData.moneda || 'COP'),
         salario: formData.salario || null,
-        auxilio_salarial: formData.auxilio_salarial || null,
-        auxilio_salarial_concepto: formData.auxilio_salarial_concepto || null,
-        auxilio_no_salarial: formData.auxilio_no_salarial || null,
-        auxilio_no_salarial_concepto: formData.auxilio_no_salarial_concepto || null,
+        auxilios: formData.auxilios && formData.auxilios.length > 0 
+          ? formData.auxilios.map(aux => ({
+              tipo: aux.tipo,
+              monto: aux.monto,
+              moneda: aux.moneda || formData.moneda || 'COP'
+            }))
+          : [],
         auxilio_transporte: formData.auxilio_transporte || null,
         tiene_condicion_medica: formData.tiene_condicion_medica || false,
         condicion_medica_detalle: (typeof formData.condicion_medica_detalle === 'string' && formData.condicion_medica_detalle.trim()) || null,
@@ -2137,67 +2159,115 @@ export default function ContractModal({
                     </div>
                   </div>
 
-                  {/* Layout fijo - Auxilios siempre numero y concepto lado a lado */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Auxilio Salarial
+                  {/* Nuevo formulario de auxilios */}
+                  <div className="col-span-1 lg:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      Auxilios
                     </label>
-                    <input
-                      type="text"
-                      value={formData.auxilio_salarial ? formatNumberWithDots(formData.auxilio_salarial) : ''}
-                      onChange={(e) => {
-                        if (!isReadOnly) {
-                          const numericValue = parseNumberFromDots(e.target.value)
-                          handleInputChange('auxilio_salarial', numericValue)
-                        }
-                      }}
-                      {...getInputProps('auxilio_salarial')}
-                      placeholder="Ej: 150.000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Concepto Auxilio Salarial
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.auxilio_salarial_concepto || ''}
-                      onChange={(e) => !isReadOnly && handleInputChange('auxilio_salarial_concepto', e.target.value)}
-                      {...getInputProps('auxilio_salarial_concepto')}
-                      placeholder="Ej: Transporte"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Auxilio No Salarial
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.auxilio_no_salarial ? formatNumberWithDots(formData.auxilio_no_salarial) : ''}
-                      onChange={(e) => {
-                        if (!isReadOnly) {
-                          const numericValue = parseNumberFromDots(e.target.value)
-                          handleInputChange('auxilio_no_salarial', numericValue)
-                        }
-                      }}
-                      {...getInputProps('auxilio_no_salarial')}
-                      placeholder="Ej: 100.000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Concepto Auxilio No Salarial
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.auxilio_no_salarial_concepto || ''}
-                      onChange={(e) => !isReadOnly && handleInputChange('auxilio_no_salarial_concepto', e.target.value)}
-                      {...getInputProps('auxilio_no_salarial_concepto')}
-                      placeholder="Ej: Alimentación"
-                    />
+                    
+                    {/* Fila para agregar auxilio */}
+                    <div className="flex items-end space-x-2 mb-3">
+                      {/* Selector de tipo */}
+                      <div className="flex-1">
+                        <select
+                          value={nuevoAuxilioTipo}
+                          onChange={(e) => !isReadOnly && setNuevoAuxilioTipo(e.target.value as 'salarial' | 'no_salarial')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
+                          disabled={isReadOnly}
+                        >
+                          <option value="salarial">Auxilio Salarial</option>
+                          <option value="no_salarial">Auxilio No Salarial</option>
+                        </select>
+                      </div>
+                      
+                      {/* Campo de monto */}
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          value={nuevoAuxilioMonto}
+                          onChange={(e) => {
+                            if (!isReadOnly) {
+                              const numericValue = parseNumberFromDots(e.target.value)
+                              setNuevoAuxilioMonto(formatNumberWithDots(numericValue))
+                            }
+                          }}
+                          placeholder="Ej: 150.000"
+                          className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
+                          disabled={isReadOnly}
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                          <span className="text-sm font-medium text-gray-600">
+                            {formData.moneda === 'otro' && formData.moneda_custom 
+                              ? formData.moneda_custom 
+                              : (formData.moneda || 'COP')}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Botón agregar */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isReadOnly && nuevoAuxilioMonto.trim()) {
+                            const monto = parseNumberFromDots(nuevoAuxilioMonto)
+                            if (monto > 0) {
+                              const nuevoAuxilio: Auxilio = {
+                                tipo: nuevoAuxilioTipo,
+                                monto: monto,
+                                moneda: formData.moneda === 'otro' && formData.moneda_custom 
+                                  ? formData.moneda_custom 
+                                  : (formData.moneda || 'COP')
+                              }
+                              handleInputChange('auxilios', [...(formData.auxilios || []), nuevoAuxilio])
+                              setNuevoAuxilioMonto('')
+                            }
+                          }
+                        }}
+                        disabled={isReadOnly || !nuevoAuxilioMonto.trim() || parseNumberFromDots(nuevoAuxilioMonto) <= 0}
+                        className="px-4 py-2 bg-[#004C4C] text-white rounded-lg hover:bg-[#065C5C] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+                    
+                    {/* Lista de auxilios agregados */}
+                    {formData.auxilios && formData.auxilios.length > 0 && (
+                      <div className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="space-y-2">
+                          {formData.auxilios.map((auxilio, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
+                              <div className="flex items-center space-x-3 flex-1">
+                                <span className="text-xs font-medium text-gray-700 min-w-[120px]">
+                                  {auxilio.tipo === 'salarial' ? 'Auxilio Salarial' : 'Auxilio No Salarial'}
+                                </span>
+                                <span className="text-sm font-semibold text-gray-900">
+                                  {formatNumberWithDots(auxilio.monto)} {auxilio.moneda || formData.moneda || 'COP'}
+                                </span>
+                              </div>
+                              {!isReadOnly && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nuevosAuxilios = formData.auxilios?.filter((_, i) => i !== index) || []
+                                    handleInputChange('auxilios', nuevosAuxilios)
+                                  }}
+                                  className="ml-2 p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                                  title="Eliminar auxilio"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(!formData.auxilios || formData.auxilios.length === 0) && (
+                      <div className="text-xs text-gray-500 italic text-center py-2 border border-gray-200 rounded-lg bg-gray-50">
+                        No hay auxilios agregados
+                      </div>
+                    )}
                   </div>
 
                   {/* Total Remuneración - Campo calculado */}
@@ -2210,7 +2280,7 @@ export default function ContractModal({
                         {formatCurrency(calculateTotalRemuneration(formData))}
                       </div>
                       <div className="text-xs text-green-700 mt-1">
-                        Salario + Aux. Salarial + Aux. No Salarial (excluye aux. transporte)
+                        Salario + Auxilios (excluye aux. transporte)
                       </div>
                     </div>
                   </div>

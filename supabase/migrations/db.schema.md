@@ -275,10 +275,11 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `tipo_salario` | TEXT | Tipo de salario (texto libre) | `Ordinario`, `Integral`, `Mixto` |
 | `moneda` | TEXT | Moneda del salario (default: COP) | `COP`, `EUR`, u otra moneda personalizada |
 | `salario` | NUMERIC(14,2) | Salario base | `3500000.00` |
-| `auxilio_salarial` | NUMERIC(14,2) | Auxilio salarial | `150000.00` |
-| `auxilio_salarial_concepto` | TEXT | Concepto del auxilio salarial | `Transporte` |
-| `auxilio_no_salarial` | NUMERIC(14,2) | Auxilio no salarial | `100000.00` |
-| `auxilio_no_salarial_concepto` | TEXT | Concepto del auxilio no salarial | `Alimentación` |
+| `auxilios` | JSONB | Array JSON de auxilios. Formato: `[{"tipo": "salarial"\|"no_salarial", "monto": number, "moneda": "COP"\|"EUR"\|...}]` | `[{"tipo": "salarial", "monto": 150000, "moneda": "COP"}]` |
+| `auxilio_salarial` | NUMERIC(14,2) | ⚠️ DEPRECADO: Usar campo `auxilios` JSON | `150000.00` |
+| `auxilio_salarial_concepto` | TEXT | ⚠️ DEPRECADO: Ya no se usa | `Transporte` |
+| `auxilio_no_salarial` | NUMERIC(14,2) | ⚠️ DEPRECADO: Usar campo `auxilios` JSON | `100000.00` |
+| `auxilio_no_salarial_concepto` | TEXT | ⚠️ DEPRECADO: Ya no se usa | `Alimentación` |
 | `auxilio_transporte` | NUMERIC(14,2) | Auxilio de transporte mensual | `140606.00` |
 | `tiene_condicion_medica` | BOOLEAN | Indica si tiene condición médica especial | `false` |
 | `condicion_medica_detalle` | TEXT | Descripción de la condición médica | `NULL` |

@@ -6,6 +6,12 @@
 export type StatusAprobacion = 'borrador' | 'aprobado'
 export type StatusVigencia = 'activo' | 'terminado'
 
+export interface Auxilio {
+  tipo: 'salarial' | 'no_salarial'
+  monto: number
+  moneda?: string // Usa la moneda del salario si no se especifica
+}
+
 export interface Contract {
   id?: string
   primer_nombre: string
@@ -41,6 +47,8 @@ export interface Contract {
   moneda?: string | null
   moneda_custom?: string | null // Campo temporal para "Otro" - se guarda en moneda al enviar
   salario?: number | null
+  auxilios?: Auxilio[] // Array de auxilios en formato JSON
+  // Campos deprecados (mantenidos por compatibilidad)
   auxilio_salarial?: number | null
   auxilio_salarial_concepto?: string | null
   auxilio_no_salarial?: number | null
@@ -215,10 +223,19 @@ export const getStatusVigenciaConfig = (status: StatusVigencia, daysUntilExpiry?
 // Función para calcular total remuneración
 export const calculateTotalRemuneration = (contract: Contract): number => {
   const salario = contract.salario || 0
-  const auxilioSalarial = contract.auxilio_salarial || 0
-  const auxilioNoSalarial = contract.auxilio_no_salarial || 0
   
-  return salario + auxilioSalarial + auxilioNoSalarial
+  // Calcular total de auxilios (usar nuevo formato si existe, sino usar campos antiguos para compatibilidad)
+  let totalAuxilios = 0
+  if (contract.auxilios && Array.isArray(contract.auxilios) && contract.auxilios.length > 0) {
+    totalAuxilios = contract.auxilios.reduce((sum, aux) => sum + (aux.monto || 0), 0)
+  } else {
+    // Compatibilidad con formato antiguo
+    const auxilioSalarial = contract.auxilio_salarial || 0
+    const auxilioNoSalarial = contract.auxilio_no_salarial || 0
+    totalAuxilios = auxilioSalarial + auxilioNoSalarial
+  }
+  
+  return salario + totalAuxilios
 }
 
 // Función para formatear moneda colombiana
