@@ -2076,7 +2076,7 @@ export default function ContractModal({
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Salario
                     </label>
-                    <div className="flex items-center space-x-2">
+                    <div className="relative">
                       <input
                         type="text"
                         value={formData.salario ? formatNumberWithDots(formData.salario) : ''}
@@ -2088,13 +2088,15 @@ export default function ContractModal({
                         }}
                         {...getInputProps('salario', !!errors.salario)}
                         placeholder="Ej: 3.500.000"
-                        className="flex-1"
+                        className="w-full px-3 py-2 pr-16 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
                       />
-                      <span className="text-sm font-medium text-gray-600 min-w-[60px] text-right px-2">
-                        {formData.moneda === 'otro' && formData.moneda_custom 
-                          ? formData.moneda_custom 
-                          : (formData.moneda || 'COP')}
-                      </span>
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <span className="text-sm font-medium text-gray-600">
+                          {formData.moneda === 'otro' && formData.moneda_custom 
+                            ? formData.moneda_custom 
+                            : (formData.moneda || 'COP')}
+                        </span>
+                      </div>
                     </div>
                     {errors.salario && (
                       <p className="text-red-600 text-xs mt-1">{errors.salario}</p>
