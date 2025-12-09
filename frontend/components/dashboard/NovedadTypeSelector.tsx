@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   User, 
   Briefcase, 
@@ -10,10 +10,12 @@ import {
   UserX, 
   Users, 
   FileText,
-  X 
+  X,
+  AlertTriangle
 } from 'lucide-react'
 import { useNovedadPermissions } from '../../hooks/useNovedadPermissions'
 import { PermissionDeniedModal } from '../ui/PermissionDeniedModal'
+import { supabase } from '../../lib/supabaseClient'
 
 /**
  * Selector de tipo de novedad con diseño moderno
@@ -122,6 +124,14 @@ const NOVEDAD_TYPES: NovedadType[] = [
   }
 ]
 
+interface AusenciaActiva {
+  tipo: 'incapacidad' | 'vacaciones' | 'licencia'
+  tipo_detalle?: string // Para incapacidades: 'comun', 'laboral', 'maternidad'
+  fecha_inicio: string
+  fecha_fin: string | null
+  dias_restantes: number | null
+}
+
 export default function NovedadTypeSelector({
   isOpen,
   onClose,
@@ -133,6 +143,100 @@ export default function NovedadTypeSelector({
   const [selectedType, setSelectedType] = useState<NovedadType | null>(null)
   const [showPermissionDenied, setShowPermissionDenied] = useState(false)
   const [deniedPermissionType, setDeniedPermissionType] = useState<string>('')
+  const [ausenciasActivas, setAusenciasActivas] = useState<AusenciaActiva[]>([])
+  const [loadingAusencias, setLoadingAusencias] = useState(false)
+
+  // Cargar ausencias activas cuando se abre el modal
+  useEffect(() => {
+    const loadAusenciasActivas = async () => {
+      if (!isOpen || !contractId) return
+
+      setLoadingAusencias(true)
+      try {
+        const hoy = new Date().toISOString().split('T')[0]
+        const ausencias: AusenciaActiva[] = []
+
+        // 1. Obtener incapacidades activas
+        // Una incapacidad está activa si: fecha_inicio <= hoy AND (fecha_fin IS NULL OR fecha_fin >= hoy)
+        const { data: incapacidades } = await supabase
+          .from('novedades_incapacidad')
+          .select('fecha_inicio, fecha_fin, tipo_incapacidad')
+          .eq('contract_id', contractId)
+          .lte('fecha_inicio', hoy)
+          .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
+          .order('fecha_inicio', { ascending: false })
+
+        if (incapacidades) {
+          incapacidades.forEach(inc => {
+            const fechaFin = inc.fecha_fin ? new Date(inc.fecha_fin) : null
+            const hoyDate = new Date()
+            hoyDate.setHours(0, 0, 0, 0)
+            
+            let diasRestantes: number | null = null
+            if (fechaFin) {
+              fechaFin.setHours(0, 0, 0, 0)
+              const diffTime = fechaFin.getTime() - hoyDate.getTime()
+              diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+            }
+
+            ausencias.push({
+              tipo: 'incapacidad',
+              tipo_detalle: inc.tipo_incapacidad,
+              fecha_inicio: inc.fecha_inicio,
+              fecha_fin: inc.fecha_fin,
+              dias_restantes: diasRestantes
+            })
+          })
+        }
+
+        // 2. Obtener vacaciones y licencias activas
+        // Vacaciones/licencias están activas si: fecha_inicio <= hoy AND (fecha_fin IS NULL OR fecha_fin >= hoy)
+        const { data: tiempoLaboral } = await supabase
+          .from('novedades_tiempo_laboral')
+          .select('fecha_inicio, fecha_fin, tipo_tiempo')
+          .eq('contract_id', contractId)
+          .in('tipo_tiempo', ['vacaciones', 'suspension'])
+          .lte('fecha_inicio', hoy)
+          .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
+          .order('fecha_inicio', { ascending: false })
+
+        if (tiempoLaboral) {
+          tiempoLaboral.forEach(tiempo => {
+            const fechaFin = tiempo.fecha_fin ? new Date(tiempo.fecha_fin) : null
+            const hoyDate = new Date()
+            hoyDate.setHours(0, 0, 0, 0)
+            
+            let diasRestantes: number | null = null
+            if (fechaFin) {
+              fechaFin.setHours(0, 0, 0, 0)
+              const diffTime = fechaFin.getTime() - hoyDate.getTime()
+              diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+            }
+
+            ausencias.push({
+              tipo: tiempo.tipo_tiempo === 'vacaciones' ? 'vacaciones' : 'licencia',
+              fecha_inicio: tiempo.fecha_inicio,
+              fecha_fin: tiempo.fecha_fin,
+              dias_restantes: diasRestantes
+            })
+          })
+        }
+
+        setAusenciasActivas(ausencias)
+      } catch (error) {
+        console.error('Error cargando ausencias activas:', error)
+        setAusenciasActivas([])
+      } finally {
+        setLoadingAusencias(false)
+      }
+    }
+
+    if (isOpen) {
+      loadAusenciasActivas()
+    } else {
+      setAusenciasActivas([])
+    }
+  }, [isOpen, contractId])
 
   const handleTypeClick = (type: NovedadType) => {
     // Validar permisos antes de proceder
@@ -178,6 +282,72 @@ export default function NovedadTypeSelector({
             </button>
           </div>
         </div>
+
+        {/* Alerta de ausencias activas */}
+        {ausenciasActivas.length > 0 && (
+          <div className="px-6 pt-4">
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-amber-800 mb-2">
+                    ⚠️ Ausencias Activas Detectadas
+                  </h3>
+                  <p className="text-xs text-amber-700 mb-3">
+                    El empleado se encuentra actualmente en una de las siguientes situaciones:
+                  </p>
+                  <div className="space-y-2">
+                    {ausenciasActivas.map((ausencia, index) => {
+                      const tipoLabel = 
+                        ausencia.tipo === 'incapacidad' 
+                          ? `Incapacidad ${ausencia.tipo_detalle === 'comun' ? 'Común' : ausencia.tipo_detalle === 'laboral' ? 'Laboral' : ausencia.tipo_detalle === 'maternidad' ? 'Maternidad' : ''}`
+                          : ausencia.tipo === 'vacaciones'
+                          ? 'Vacaciones'
+                          : 'Licencia'
+                      
+                      const fechaInicio = new Date(ausencia.fecha_inicio).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })
+                      
+                      const fechaFin = ausencia.fecha_fin 
+                        ? new Date(ausencia.fecha_fin).toLocaleDateString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })
+                        : 'Sin fecha de fin'
+                      
+                      return (
+                        <div key={index} className="bg-white bg-opacity-60 rounded p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <span className="font-semibold text-amber-900">{tipoLabel}</span>
+                              <div className="text-amber-700 mt-1">
+                                <span className="text-amber-600">📅</span> {fechaInicio} - {fechaFin}
+                              </div>
+                            </div>
+                            {ausencia.dias_restantes !== null && (
+                              <div className="ml-3 text-right">
+                                <span className="font-semibold text-amber-900">
+                                  {ausencia.dias_restantes > 0 
+                                    ? `${ausencia.dias_restantes} día${ausencia.dias_restantes !== 1 ? 's' : ''} restante${ausencia.dias_restantes !== 1 ? 's' : ''}`
+                                    : 'Finaliza hoy'
+                                  }
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-6">
