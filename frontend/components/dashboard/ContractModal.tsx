@@ -52,6 +52,17 @@ export default function ContractModal({
   const [cajaCompensacionActiva, setCajaCompensacionActiva] = useState<string>('')
   const [arlActiva, setArlActiva] = useState<string>('')
   
+  // Estados para información de empresa (ARL y Cajas)
+  const [empresaInfo, setEmpresaInfo] = useState<{
+    arl: { id: string; nombre: string } | null
+    cajas: { id: string; nombre: string; ciudad: string }[]
+    loading: boolean
+  }>({
+    arl: null,
+    cajas: [],
+    loading: false
+  })
+  
   // Lógica de estados del contrato
   const statusConfig = contract ? getContractStatusConfig(contract) : null
   const isReadOnly = Boolean(contract && statusConfig && !statusConfig.can_edit)
@@ -923,6 +934,57 @@ export default function ContractModal({
     }
   }, [formData.empresa_final_id, formData.fecha_ingreso])
 
+  // Cargar información de ARL y Cajas de la empresa seleccionada (para mostrar en cuadro informativo)
+  const loadEmpresaInfo = async (empresaId: string) => {
+    if (!empresaId) {
+      setEmpresaInfo({ arl: null, cajas: [], loading: false })
+      return
+    }
+
+    setEmpresaInfo(prev => ({ ...prev, loading: true }))
+
+    try {
+      // Cargar ARL activa usando la función RPC
+      const { data: arlData, error: arlError } = await supabase
+        .rpc('get_empresa_arl_actual', { empresa_uuid: empresaId })
+
+      // Cargar todas las cajas activas usando la función RPC
+      const { data: cajasData, error: cajasError } = await supabase
+        .rpc('get_empresa_cajas_actuales', { empresa_uuid: empresaId })
+
+      const arl = arlData && arlData.length > 0 
+        ? { id: arlData[0].arl_id, nombre: arlData[0].arl_nombre }
+        : null
+
+      const cajas = cajasData && cajasData.length > 0
+        ? cajasData.map((caja: any) => ({
+            id: caja.caja_id,
+            nombre: caja.caja_nombre,
+            ciudad: caja.ciudad_nombre
+          }))
+        : []
+
+      setEmpresaInfo({
+        arl,
+        cajas,
+        loading: false
+      })
+
+    } catch (error) {
+      console.error('Error cargando información de empresa:', error)
+      setEmpresaInfo({ arl: null, cajas: [], loading: false })
+    }
+  }
+
+  // Cargar información de empresa cuando se selecciona
+  useEffect(() => {
+    if (formData.empresa_final_id) {
+      loadEmpresaInfo(formData.empresa_final_id)
+    } else {
+      setEmpresaInfo({ arl: null, cajas: [], loading: false })
+    }
+  }, [formData.empresa_final_id])
+
   // Manejar cambios en el formulario
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -1616,6 +1678,54 @@ export default function ContractModal({
                     />
                     {errors.empresa_final_id && (
                       <p className="text-red-600 text-xs mt-1">{errors.empresa_final_id}</p>
+                    )}
+                    
+                    {/* Cuadro informativo de ARL y Cajas */}
+                    {formData.empresa_final_id && (
+                      <div className="mt-3 p-3 bg-[#E6F5F7] border border-[#87E0E0] rounded-lg">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Shield className="h-4 w-4 text-[#004C4C]" />
+                          <h4 className="text-xs font-semibold text-[#004C4C]">Información de la Empresa</h4>
+                        </div>
+                        
+                        {empresaInfo.loading ? (
+                          <div className="flex items-center space-x-2 text-xs text-gray-600">
+                            <div className="w-3 h-3 border-2 border-[#87E0E0] border-t-transparent rounded-full animate-spin"></div>
+                            <span>Cargando información...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 text-xs">
+                            {/* ARL */}
+                            <div className="flex items-start space-x-2">
+                              <span className="text-[#065C5C] font-medium min-w-[60px]">🛡️ ARL:</span>
+                              {empresaInfo.arl ? (
+                                <span className="text-gray-700">{empresaInfo.arl.nombre}</span>
+                              ) : (
+                                <span className="text-gray-500 italic">No configurada</span>
+                              )}
+                            </div>
+                            
+                            {/* Cajas de Compensación */}
+                            <div className="flex items-start space-x-2">
+                              <span className="text-[#065C5C] font-medium min-w-[60px]">📦 Caja:</span>
+                              {empresaInfo.cajas.length > 0 ? (
+                                <div className="flex-1 space-y-1">
+                                  {empresaInfo.cajas.map((caja, index) => (
+                                    <div key={caja.id} className="text-gray-700">
+                                      {caja.nombre}
+                                      {caja.ciudad && (
+                                        <span className="text-gray-500 ml-1">({caja.ciudad})</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-500 italic">No configurada</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
 
