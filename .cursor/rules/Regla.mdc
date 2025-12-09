@@ -1,0 +1,284 @@
+---
+alwaysApply: true
+---
+✅ 2. Responsive Design
+
+All views must be mobile-friendly.
+
+Use Tailwind’s responsive utilities (sm:, md:, etc.).
+
+Test UI on mobile viewport before considering it final.
+
+
+
+---
+
+✅ 3. Frontend Logic and When to Ask
+
+You can add frontend logic freely if it's:
+
+Simple and local (UI only)
+
+Not security-sensitive
+
+Not related to roles, permissions, or pricing
+
+
+✅ Allowed examples (no need to ask):
+
+Toggling components
+
+Button loading states
+
+Showing/hiding sections
+
+Local input validation
+
+Simple conditionals
+
+
+❗ You must ask before adding logic that:
+
+Involves user roles, pricing, access
+
+Filters or interprets backend data
+
+Touches Supabase directly in non-standard ways
+
+Bypasses security controls (RLS or edge functions)
+
+Adds a new library or code pattern
+
+
+If a rule blocks your action, explain:
+
+> “This action conflicts with rule X. Would you like to override it for this case?”
+
+
+
+
+---
+
+✅ 4. Code Quality
+
+Reuse existing components and functions when possible.
+
+Remove unused imports or dead code.
+
+Use clear, consistent naming.
+
+Avoid unnecessary abstraction or complexity.
+
+Never mix business logic in UI components.
+
+
+
+---
+
+✅ 5. File Structure
+
+Maintain this structure:
+
+/components: UI and reusable parts
+
+/pages: Routes
+
+/utils or /lib: Helpers and logic
+
+/schema: DB schema markdowns
+
+
+Keep code modular and predictable.
+
+
+---
+
+✅ 6. Comments & Documentation
+
+Every new file or export must include a short comment about what it does.
+
+Use inline comments only for complex logic.
+
+Code should mostly be self-explanatory.
+
+
+
+---
+
+✅ 7. Database Schema (supabase/migrations/db.schema.md)
+
+**ALWAYS UPDATE** this file when:
+
+Tables are created or deleted
+
+Columns are added/removed
+
+Relationships are changed
+
+Migrations are created
+
+Indexes or constraints are modified
+
+
+📝 Always edit the existing table in place.
+🚫 Never duplicate or add a table at the bottom that already exists.
+📋 **MANDATORY:** Update db.schema.md immediately after any database changes to maintain accurate documentation.
+🎯 This file serves as the single source of truth for the database structure.
+
+
+---
+
+✅ 8. Environment Variables
+
+Always use environment variables for:
+
+Supabase URL and keys
+
+Frontend and backend domains
+
+API credentials or third-party endpoints
+
+
+✅ Applies to both frontend and backend.
+🚫 Never hardcode domains or secrets. This keeps deployment flexible.
+
+
+---
+
+✅ 9. UI Consistency & UX Direction
+
+Reuse shared components for:
+
+Modals
+
+Alerts
+
+Notifications
+
+Messages
+
+
+Use /components/ui/ for base UI elements.
+
+Follow a clean, modern design style (Tailwind UI or shadcn/ui preferred).
+
+Cursor is encouraged to propose modern UI/UX approaches aligned with leading tech product standards — always think in terms of good UX.
+
+Use the official GOOD Talent color palette below when designing or adjusting visual elements:
+
+🎨 GOOD Talent Official Color Palette:
+
+#004C4C – Dark teal (background base)
+#065C5C – Medium teal (base layer)
+#0A6A6A – Light teal (support layer)
+#E6F5F7 – Soft white (text on dark)
+#87E0E0 – Light cyan (accent)
+#5FD3D2 – Turquoise (highlight)
+#58BFC2 – Cyan (secondary text/accent)
+
+These colors should guide visual consistency across all screens. If a new accent or variant is proposed, please ask first.
+
+
+
+---
+
+✅ 10. Rule Conflicts
+
+If a rule blocks a task, Cursor must:
+
+Say which rule is causing the conflict
+
+Ask:
+
+> “This action conflicts with rule X. Would you like to override it for this case?”
+
+
+
+
+
+---
+
+✅ 11. Permissions & Data Loading Pattern
+
+**MANDATORY for all pages that show Supabase data:**
+
+Always use `usePermissions()` hook - NEVER create custom permission hooks.
+
+Use this exact pattern for data loading with cache:
+
+```typescript
+const [data, setData] = useState<DataType[]>([])
+const [loading, setLoading] = useState(true)
+const [loadingRef, setLoadingRef] = useState(false) // Prevent multiple loads
+const [dataLoaded, setDataLoaded] = useState(false) // Track cache
+
+const loadData = async () => {
+  if (loadingRef) return
+  
+  // Check cache first
+  const cached = localStorage.getItem('TABLENAME_cache')
+  if (cached && !dataLoaded) {
+    const parsed = JSON.parse(cached)
+    if (Date.now() - parsed.timestamp < 300000) { // 5min cache
+      setData(parsed.data)
+      setDataLoaded(true)
+      setLoading(false)
+      return
+    }
+    localStorage.removeItem('TABLENAME_cache')
+  }
+  
+  setLoadingRef(true)
+  // ... load from Supabase
+  // Save to cache: localStorage.setItem('TABLENAME_cache', JSON.stringify({data, timestamp: Date.now()}))
+  setDataLoaded(true)
+  setLoadingRef(false)
+}
+
+useEffect(() => {
+  const shouldLoad = !permissionsLoading && permissions.length > 0 && canRead && !dataLoaded && !loadingRef
+  if (shouldLoad) loadData()
+  else if (dataLoaded) setLoading(false)
+}, [permissionsLoading, permissions.length, canRead, dataLoaded])
+```
+
+**Cache naming:** `TABLENAME_cache` (companies_cache, users_cache, etc.)
+
+**NEVER:**
+- Call `supabase.rpc('my_permissions')` directly
+- Load data without checking cache first
+- Use `data.length === 0` as load condition (use `dataLoaded` instead)
+
+---
+
+✅ 12. Language and Localization
+The application's default and only supported language is Spanish. All user-facing text, notifications, alerts, emails, and UI elements must be written in Spanish. No English or other languages should be used in the interface or communications, unless explicitly approved for a specific exception.
+
+---
+
+❌ Don’t:
+
+Expose Supabase keys or business logic in the frontend.
+
+Add direct Supabase operations without security (use RLS or edge functions).
+
+Introduce libraries without approval.
+
+Leave unused code.
+
+Duplicate component logic.
+
+Break responsiveness or accessibility.
+
+
+
+---
+
+🧭 Final Reminder
+
+Backend handles all critical logic.
+Frontend handles UI and basic flows.
+Cursor has freedom for UI logic, but must ask for anything that impacts security, pricing, or roles.
+
+→ Simple. Secure. Clean. Scalable.
+

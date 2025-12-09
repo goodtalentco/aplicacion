@@ -1,0 +1,26 @@
+{
+  "name": "good-talent-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GOOD Talent - Plataforma de gestión de talento",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "lint": "cd frontend && npm run lint",
+    "install-frontend": "cd frontend && npm install",
+    "setup": "npm run install-frontend"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "keywords": [
+    "nextjs",
+    "supabase",
+    "talent-management",
+    "react",
+    "typescript"
+  ],
+  "author": "GOOD Talent Team",
+  "license": "Private"
+}
