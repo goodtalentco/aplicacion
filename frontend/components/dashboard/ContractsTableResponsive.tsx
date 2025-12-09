@@ -56,6 +56,7 @@ export default function ContractsTableResponsive({
   onEdit,
   onDelete,
   onAdd,
+  onUpdate,
   onApprovalChange
 }: ContractsTableResponsiveProps) {
 
