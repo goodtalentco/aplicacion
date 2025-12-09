@@ -1186,10 +1186,13 @@ export default function ContractModal({
   }
 
   // Enviar formulario con validación inteligente
-  const handleSubmit = async () => {
-    const { errors, errorsByTab } = validateAllFields()
-    
-    if (Object.keys(errors).length > 0) {
+  const handleSubmit = async (saveAs: 'borrador' | 'aprobado' = 'aprobado') => {
+    // Si es borrador, no validar - permitir guardar incompleto
+    // Si es aprobado, validar todo
+    if (saveAs === 'aprobado') {
+      const { errors, errorsByTab } = validateAllFields()
+      
+      if (Object.keys(errors).length > 0) {
       // Encontrar la primera pestaña con errores
       const firstTabWithErrors = Object.keys(errorsByTab).find(tabIndex => 
         errorsByTab[parseInt(tabIndex)].length > 0
@@ -1252,11 +1255,15 @@ export default function ContractModal({
       }
       return
     }
+    }
 
     setLoading(true)
     try {
       // Crear objeto limpio solo con campos que existen en la tabla contracts
       const dataToSave = {
+        // Solo actualizar status_aprobacion en modo creación
+        // En modo edición, el status solo se cambia mediante el botón de aprobación
+        ...(mode === 'create' ? { status_aprobacion: saveAs } : {}),
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre || null,
         primer_apellido: formData.primer_apellido,
@@ -2467,28 +2474,63 @@ export default function ContractModal({
               Siguiente
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading || isReadOnly}
-              className={`px-4 py-1.5 rounded-lg transition-all text-sm ${
-                loading || isReadOnly
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-[#004C4C] hover:bg-[#065C5C]'
-              } text-white flex items-center space-x-2`}
-            >
-              {loading && (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex items-center space-x-2">
+              {mode === 'create' && !isReadOnly ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit('borrador')}
+                    disabled={loading}
+                    className={`px-4 py-1.5 rounded-lg transition-all text-sm ${
+                      loading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-amber-500 hover:bg-amber-600'
+                    } text-white flex items-center space-x-2`}
+                  >
+                    {loading && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    <span>Guardar como Borrador</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit('aprobado')}
+                    disabled={loading}
+                    className={`px-4 py-1.5 rounded-lg transition-all text-sm ${
+                      loading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-[#004C4C] hover:bg-[#065C5C]'
+                    } text-white flex items-center space-x-2`}
+                  >
+                    {loading && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    <span>Crear Contrato</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSubmit(contract?.status_aprobacion === 'borrador' ? 'borrador' : 'aprobado')}
+                  disabled={loading || isReadOnly}
+                  className={`px-4 py-1.5 rounded-lg transition-all text-sm ${
+                    loading || isReadOnly
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-[#004C4C] hover:bg-[#065C5C]'
+                  } text-white flex items-center space-x-2`}
+                >
+                  {loading && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  )}
+                  <span>
+                    {isReadOnly 
+                      ? 'Solo Lectura' 
+                      : 'Guardar Cambios'
+                    }
+                  </span>
+                </button>
               )}
-              <span>
-                {isReadOnly 
-                  ? 'Solo Lectura' 
-                  : mode === 'create' 
-                    ? 'Crear Contrato' 
-                    : 'Guardar Cambios'
-                }
-              </span>
-            </button>
+            </div>
           )}
         </div>
       </div>
