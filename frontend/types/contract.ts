@@ -37,6 +37,8 @@ export interface Contract {
     alerta_legal?: string
   } | null
   tipo_salario?: string | null
+  moneda?: string | null
+  moneda_custom?: string | null // Campo temporal para "Otro" - se guarda en moneda al enviar
   salario?: number | null
   auxilio_salarial?: number | null
   auxilio_salarial_concepto?: string | null

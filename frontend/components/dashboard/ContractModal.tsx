@@ -88,6 +88,8 @@ export default function ContractModal({
     tipo_contrato: '',
     fecha_fin: '',
     tipo_salario: '',
+    moneda: 'COP',
+    moneda_custom: '',
     salario: 0,
     auxilio_salarial: 0,
     auxilio_salarial_concepto: '',
@@ -569,6 +571,12 @@ export default function ContractModal({
           tipo_contrato: contract.tipo_contrato || '',
           fecha_fin: contract.fecha_fin || '',
           tipo_salario: contract.tipo_salario || '',
+          moneda: contract.moneda && contract.moneda !== 'COP' && contract.moneda !== 'EUR'
+            ? 'otro'
+            : (contract.moneda || 'COP'),
+          moneda_custom: contract.moneda && contract.moneda !== 'COP' && contract.moneda !== 'EUR' 
+            ? contract.moneda 
+            : '',
           salario: contract.salario || 0,
           auxilio_salarial: contract.auxilio_salarial || 0,
           auxilio_salarial_concepto: contract.auxilio_salarial_concepto || '',
@@ -635,6 +643,8 @@ export default function ContractModal({
           tipo_contrato: '',
           fecha_fin: '',
           tipo_salario: '',
+          moneda: 'COP',
+          moneda_custom: '',
           salario: 0,
           auxilio_salarial: 0,
           auxilio_salarial_concepto: '',
@@ -711,6 +721,11 @@ export default function ContractModal({
     if (formData.salario && formData.salario < 0) {
       newErrors.salario = 'El salario debe ser mayor o igual a 0'
       errorsByTab[1].push('salario')
+    }
+    // Validar moneda personalizada si se selecciona "Otro"
+    if (formData.moneda === 'otro' && (!formData.moneda_custom || !formData.moneda_custom.trim())) {
+      newErrors.moneda_custom = 'Debe especificar la moneda cuando selecciona "Otro"'
+      errorsByTab[1].push('moneda_custom')
     }
 
     // Validación de condición médica
@@ -858,7 +873,7 @@ export default function ContractModal({
       if (currentTab === 0) {
         return ['primer_nombre', 'primer_apellido', 'numero_identificacion', 'fecha_nacimiento', 'email'].includes(field)
       } else if (currentTab === 1) {
-        return ['empresa_final_id', 'fecha_fin', 'salario'].includes(field)
+        return ['empresa_final_id', 'fecha_fin', 'salario', 'moneda_custom'].includes(field)
       } else if (currentTab === 2) {
         return [
           'examenes_fecha', 'contrato_fecha_confirmacion', 'arl_nombre', 'arl_fecha_confirmacion',
@@ -1259,6 +1274,9 @@ export default function ContractModal({
         tipo_contrato: formData.tipo_contrato || null,
         fecha_fin: formData.fecha_fin || null,
         tipo_salario: formData.tipo_salario || null,
+        moneda: formData.moneda === 'otro' && formData.moneda_custom 
+          ? formData.moneda_custom.toUpperCase() 
+          : (formData.moneda || 'COP'),
         salario: formData.salario || null,
         auxilio_salarial: formData.auxilio_salarial || null,
         auxilio_salarial_concepto: formData.auxilio_salarial_concepto || null,
@@ -1974,23 +1992,85 @@ export default function ContractModal({
                     )}
                   </div>
 
+                  {/* Moneda y Salario */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Moneda *
+                      </label>
+                      <select
+                        value={formData.moneda || 'COP'}
+                        onChange={(e) => {
+                          if (!isReadOnly) {
+                            const nuevaMoneda = e.target.value
+                            handleInputChange('moneda', nuevaMoneda)
+                            // Si cambia de "otro" a otra opción, limpiar moneda_custom
+                            if (nuevaMoneda !== 'otro') {
+                              handleInputChange('moneda_custom', '')
+                            }
+                          }
+                        }}
+                        {...getInputProps('moneda')}
+                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent border-gray-300"
+                      >
+                        <option value="COP">COP - Peso Colombiano</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </div>
+                    
+                    {/* Campo de moneda personalizada (solo si se selecciona "Otro") */}
+                    {formData.moneda === 'otro' && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Especificar Moneda *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.moneda_custom || ''}
+                          onChange={(e) => {
+                            if (!isReadOnly) {
+                              // Convertir a mayúsculas automáticamente
+                              handleInputChange('moneda_custom', e.target.value.toUpperCase())
+                            }
+                          }}
+                          {...getInputProps('moneda_custom', !!errors.moneda_custom)}
+                          placeholder="Ej: USD, GBP, etc."
+                          maxLength={10}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent border-gray-300"
+                        />
+                        {errors.moneda_custom && (
+                          <p className="text-red-600 text-xs mt-1">{errors.moneda_custom}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {/* Layout fijo - Salario y Auxilio Transporte siempre juntos */}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Salario
                     </label>
-                    <input
-                      type="text"
-                      value={formData.salario ? formatNumberWithDots(formData.salario) : ''}
-                      onChange={(e) => {
-                        if (!isReadOnly) {
-                          const numericValue = parseNumberFromDots(e.target.value)
-                          handleInputChange('salario', numericValue)
-                        }
-                      }}
-                      {...getInputProps('salario', !!errors.salario)}
-                      placeholder="Ej: 3.500.000"
-                    />
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={formData.salario ? formatNumberWithDots(formData.salario) : ''}
+                        onChange={(e) => {
+                          if (!isReadOnly) {
+                            const numericValue = parseNumberFromDots(e.target.value)
+                            handleInputChange('salario', numericValue)
+                          }
+                        }}
+                        {...getInputProps('salario', !!errors.salario)}
+                        placeholder="Ej: 3.500.000"
+                        className="flex-1"
+                      />
+                      <span className="text-sm font-medium text-gray-600 min-w-[60px] text-right px-2">
+                        {formData.moneda === 'otro' && formData.moneda_custom 
+                          ? formData.moneda_custom 
+                          : (formData.moneda || 'COP')}
+                      </span>
+                    </div>
                     {errors.salario && (
                       <p className="text-red-600 text-xs mt-1">{errors.salario}</p>
                     )}

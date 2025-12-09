@@ -272,6 +272,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `tipo_contrato` | TEXT | Tipo de contrato (texto libre) | `Indefinido`, `Término Fijo`, `Por Obra` |
 | `fecha_fin` | DATE | Fecha de terminación | `2025-12-31` |
 | `tipo_salario` | TEXT | Tipo de salario (texto libre) | `Ordinario`, `Integral`, `Mixto` |
+| `moneda` | TEXT | Moneda del salario (default: COP) | `COP`, `EUR`, u otra moneda personalizada |
 | `salario` | NUMERIC(14,2) | Salario base | `3500000.00` |
 | `auxilio_salarial` | NUMERIC(14,2) | Auxilio salarial | `150000.00` |
 | `auxilio_salarial_concepto` | TEXT | Concepto del auxilio salarial | `Transporte` |
