@@ -1521,8 +1521,15 @@ export default function ContractModal({
                       {...getDateLimits('birth')}
                       value={formData.fecha_nacimiento}
                       onChange={(e) => {
-                        if (!isReadOnly && validateDateInput(e.target.value, 'birth')) {
+                        if (!isReadOnly) {
+                          // Permitir escribir sin validar hasta que el campo esté completo
                           handleInputChange('fecha_nacimiento', e.target.value)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Validar solo cuando el usuario termine de escribir (onBlur)
+                        if (!isReadOnly && e.target.value) {
+                          validateDateInput(e.target.value, 'birth', true, true)
                         }
                       }}
                       {...getInputProps('fecha_nacimiento', !!errors.fecha_nacimiento)}
@@ -1775,8 +1782,15 @@ export default function ContractModal({
                       {...getDateLimits('work')}
                       value={formData.fecha_ingreso || ''}
                       onChange={(e) => {
-                        if (!isReadOnly && !periodosHistorial.length && validateDateInput(e.target.value, 'work')) {
+                        if (!isReadOnly && !periodosHistorial.length) {
+                          // Permitir escribir sin validar hasta que el campo esté completo
                           handleInputChange('fecha_ingreso', e.target.value)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Validar solo cuando el usuario termine de escribir (onBlur)
+                        if (!isReadOnly && !periodosHistorial.length && e.target.value) {
+                          validateDateInput(e.target.value, 'work', true, true)
                         }
                       }}
                       disabled={isReadOnly || periodosHistorial.length > 0} // Bloquear si hay historial
@@ -1806,8 +1820,15 @@ export default function ContractModal({
                       {...getDateLimits('work')}
                       value={formData.tipo_contrato === 'indefinido' ? '' : formData.fecha_fin || ''}
                       onChange={(e) => {
-                        if (!isReadOnly && validateDateInput(e.target.value, 'work')) {
+                        if (!isReadOnly) {
+                          // Permitir escribir sin validar hasta que el campo esté completo
                           handleInputChange('fecha_fin', e.target.value)
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Validar solo cuando el usuario termine de escribir (onBlur)
+                        if (!isReadOnly && e.target.value) {
+                          validateDateInput(e.target.value, 'work', true, true)
                         }
                       }}
                       {...getInputProps('fecha_fin', !!errors.fecha_fin)}
@@ -2086,8 +2107,15 @@ export default function ContractModal({
                         {...getDateLimits('past')}
                         value={formData.fecha_solicitud || ''}
                         onChange={(e) => {
-                          if (!isReadOnly && validateDateInput(e.target.value, 'past')) {
+                          if (!isReadOnly) {
+                            // Permitir escribir sin validar hasta que el campo esté completo
                             handleInputChange('fecha_solicitud', e.target.value)
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Validar solo cuando el usuario termine de escribir (onBlur)
+                          if (!isReadOnly && e.target.value) {
+                            validateDateInput(e.target.value, 'past', true, true)
                           }
                         }}
                         {...getInputProps('fecha_solicitud')}
@@ -2103,8 +2131,15 @@ export default function ContractModal({
                         {...getDateLimits('past')}
                         value={formData.fecha_radicado || ''}
                         onChange={(e) => {
-                          if (!isReadOnly && validateDateInput(e.target.value, 'past')) {
+                          if (!isReadOnly) {
+                            // Permitir escribir sin validar hasta que el campo esté completo
                             handleInputChange('fecha_radicado', e.target.value)
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // Validar solo cuando el usuario termine de escribir (onBlur)
+                          if (!isReadOnly && e.target.value) {
+                            validateDateInput(e.target.value, 'past', true, true)
                           }
                         }}
                         {...getInputProps('fecha_radicado')}

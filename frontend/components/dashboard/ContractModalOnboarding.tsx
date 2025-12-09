@@ -2,6 +2,7 @@
 
 import { Contract } from '../../types/contract'
 import AuxiliaryDropdown from '../ui/AuxiliaryDropdown'
+import { validateDateInput, getDateLimits } from '../../utils/dateValidation'
 
 interface ContractModalOnboardingProps {
   formData: Contract
@@ -92,8 +93,20 @@ export default function ContractModalOnboarding({
               </label>
               <input
                 type="date"
+                {...getDateLimits('past')}
                 value={formData.examenes_fecha || ''}
-                onChange={(e) => !isReadOnly && handleInputChange('examenes_fecha', e.target.value)}
+                onChange={(e) => {
+                  if (!isReadOnly) {
+                    // Permitir escribir sin validar hasta que el campo esté completo
+                    handleInputChange('examenes_fecha', e.target.value)
+                  }
+                }}
+                onBlur={(e) => {
+                  // Validar solo cuando el usuario termine de escribir (onBlur)
+                  if (!isReadOnly && e.target.value) {
+                    validateDateInput(e.target.value, 'past', true, true)
+                  }
+                }}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                   errors.examenes_fecha ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
@@ -166,8 +179,20 @@ export default function ContractModalOnboarding({
               </label>
               <input
                 type="date"
+                {...getDateLimits('past')}
                 value={formData.contrato_fecha_confirmacion || ''}
-                onChange={(e) => !isReadOnly && handleInputChange('contrato_fecha_confirmacion', e.target.value)}
+                onChange={(e) => {
+                  if (!isReadOnly) {
+                    // Permitir escribir sin validar hasta que el campo esté completo
+                    handleInputChange('contrato_fecha_confirmacion', e.target.value)
+                  }
+                }}
+                onBlur={(e) => {
+                  // Validar solo cuando el usuario termine de escribir (onBlur)
+                  if (!isReadOnly && e.target.value) {
+                    validateDateInput(e.target.value, 'past', true, true)
+                  }
+                }}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                   errors.contrato_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                 }`}
@@ -270,8 +295,20 @@ export default function ContractModalOnboarding({
                 </label>
                 <input
                   type="date"
+                  {...getDateLimits('past')}
                   value={formData.arl_fecha_confirmacion || ''}
-                  onChange={(e) => !isReadOnly && handleInputChange('arl_fecha_confirmacion', e.target.value)}
+                  onChange={(e) => {
+                    if (!isReadOnly) {
+                      // Permitir escribir sin validar hasta que el campo esté completo
+                      handleInputChange('arl_fecha_confirmacion', e.target.value)
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validar solo cuando el usuario termine de escribir (onBlur)
+                    if (!isReadOnly && e.target.value) {
+                      validateDateInput(e.target.value, 'past', true, true)
+                    }
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                     errors.arl_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
@@ -365,8 +402,20 @@ export default function ContractModalOnboarding({
                 </label>
                 <input
                   type="date"
+                  {...getDateLimits('past')}
                   value={formData.eps_fecha_confirmacion || ''}
-                  onChange={(e) => !isReadOnly && handleInputChange('eps_fecha_confirmacion', e.target.value)}
+                  onChange={(e) => {
+                    if (!isReadOnly) {
+                      // Permitir escribir sin validar hasta que el campo esté completo
+                      handleInputChange('eps_fecha_confirmacion', e.target.value)
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validar solo cuando el usuario termine de escribir (onBlur)
+                    if (!isReadOnly && e.target.value) {
+                      validateDateInput(e.target.value, 'past', true, true)
+                    }
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                     errors.eps_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
@@ -470,8 +519,20 @@ export default function ContractModalOnboarding({
                 </label>
                 <input
                   type="date"
+                  {...getDateLimits('past')}
                   value={formData.caja_fecha_confirmacion || ''}
-                  onChange={(e) => !isReadOnly && handleInputChange('caja_fecha_confirmacion', e.target.value)}
+                  onChange={(e) => {
+                    if (!isReadOnly) {
+                      // Permitir escribir sin validar hasta que el campo esté completo
+                      handleInputChange('caja_fecha_confirmacion', e.target.value)
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validar solo cuando el usuario termine de escribir (onBlur)
+                    if (!isReadOnly && e.target.value) {
+                      validateDateInput(e.target.value, 'past', true, true)
+                    }
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                     errors.caja_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
@@ -565,8 +626,20 @@ export default function ContractModalOnboarding({
                 </label>
                 <input
                   type="date"
+                  {...getDateLimits('past')}
                   value={formData.cesantias_fecha_confirmacion || ''}
-                  onChange={(e) => !isReadOnly && handleInputChange('cesantias_fecha_confirmacion', e.target.value)}
+                  onChange={(e) => {
+                    if (!isReadOnly) {
+                      // Permitir escribir sin validar hasta que el campo esté completo
+                      handleInputChange('cesantias_fecha_confirmacion', e.target.value)
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validar solo cuando el usuario termine de escribir (onBlur)
+                    if (!isReadOnly && e.target.value) {
+                      validateDateInput(e.target.value, 'past', true, true)
+                    }
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                     errors.cesantias_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
@@ -660,8 +733,20 @@ export default function ContractModalOnboarding({
                 </label>
                 <input
                   type="date"
+                  {...getDateLimits('past')}
                   value={formData.pension_fecha_confirmacion || ''}
-                  onChange={(e) => !isReadOnly && handleInputChange('pension_fecha_confirmacion', e.target.value)}
+                  onChange={(e) => {
+                    if (!isReadOnly) {
+                      // Permitir escribir sin validar hasta que el campo esté completo
+                      handleInputChange('pension_fecha_confirmacion', e.target.value)
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validar solo cuando el usuario termine de escribir (onBlur)
+                    if (!isReadOnly && e.target.value) {
+                      validateDateInput(e.target.value, 'past', true, true)
+                    }
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] ${
                     errors.pension_fecha_confirmacion ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
