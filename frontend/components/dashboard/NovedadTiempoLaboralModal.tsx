@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Clock, Save, AlertCircle, ArrowLeft, Calendar, Pause, RefreshCw } from 'lucide-react'
+import { X, Clock, Save, AlertCircle, ArrowLeft, Calendar, Pause, RefreshCw, Heart } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { usePermissions } from '@/lib/usePermissions'
 import ContractHistoryTimeline from './ContractHistoryTimeline'
@@ -22,7 +22,7 @@ interface NovedadTiempoLaboralModalProps {
 }
 
 interface TiempoLaboralData {
-  tipo_tiempo: 'prorroga' | 'vacaciones' | 'suspension'
+  tipo_tiempo: 'prorroga' | 'vacaciones' | 'suspension' | 'dia_familia'
   fecha_inicio: string
   fecha_fin: string
   motivo: string
@@ -61,6 +61,15 @@ const TIEMPO_LABORAL_TYPES = [
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-200'
+  },
+  {
+    id: 'dia_familia' as const,
+    label: 'Día de la Familia',
+    description: 'Día festivo para celebrar el día de la familia',
+    icon: Heart,
+    color: 'text-pink-600',
+    bgColor: 'bg-pink-50',
+    borderColor: 'border-pink-200'
   }
 ]
 
@@ -354,6 +363,17 @@ export default function NovedadTiempoLaboralModal({
       }
     }
 
+    if (selectedType.id === 'dia_familia') {
+      if (!formData.fecha_inicio || !formData.fecha_fin) {
+        setError('Las fechas de inicio y fin son obligatorias')
+        return
+      }
+      if (formData.fecha_inicio !== formData.fecha_fin) {
+        setError('El Día de la Familia solo puede durar un día. La fecha de inicio y fin deben ser iguales')
+        return
+      }
+    }
+
     if (!formData.motivo.trim()) {
       setError('El motivo es obligatorio')
       return
@@ -401,7 +421,7 @@ export default function NovedadTiempoLaboralModal({
           dataToInsert.nueva_fecha_fin = formData.nueva_fecha_fin
         }
 
-        if (selectedType.id === 'vacaciones' || selectedType.id === 'suspension') {
+        if (selectedType.id === 'vacaciones' || selectedType.id === 'suspension' || selectedType.id === 'dia_familia') {
           const diasCalculados = calculateDias()
           dataToInsert.dias = diasCalculados
         }
@@ -739,12 +759,20 @@ export default function NovedadTiempoLaboralModal({
                 </div>
               )}
 
-              {(selectedType.id === 'vacaciones' || selectedType.id === 'suspension') && (
+              {(selectedType.id === 'vacaciones' || selectedType.id === 'suspension' || selectedType.id === 'dia_familia') && (
                 <div className="space-y-6">
                   <div className="bg-white p-4 lg:p-6 rounded-xl border border-gray-200">
                     <h5 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                      <span>{selectedType.id === 'vacaciones' ? '🏖️' : '⏸️'}</span>
-                      <span>Período de {selectedType.id === 'vacaciones' ? 'Vacaciones' : 'Suspensión'}</span>
+                      <span>
+                        {selectedType.id === 'vacaciones' ? '🏖️' : 
+                         selectedType.id === 'suspension' ? '⏸️' : 
+                         selectedType.id === 'dia_familia' ? '❤️' : ''}
+                      </span>
+                      <span>
+                        {selectedType.id === 'vacaciones' ? 'Período de Vacaciones' : 
+                         selectedType.id === 'suspension' ? 'Período de Suspensión' : 
+                         selectedType.id === 'dia_familia' ? 'Día de la Familia' : ''}
+                      </span>
                     </h5>
                     
                     <div className="space-y-4">
@@ -756,7 +784,13 @@ export default function NovedadTiempoLaboralModal({
                           <input
                             type="date"
                             value={formData.fecha_inicio}
-                            onChange={(e) => handleInputChange('fecha_inicio', e.target.value)}
+                            onChange={(e) => {
+                              handleInputChange('fecha_inicio', e.target.value)
+                              // Para Día de la Familia, sincronizar automáticamente fecha_fin con fecha_inicio
+                              if (selectedType.id === 'dia_familia') {
+                                handleInputChange('fecha_fin', e.target.value)
+                              }
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                           />
@@ -768,31 +802,60 @@ export default function NovedadTiempoLaboralModal({
                           <input
                             type="date"
                             value={formData.fecha_fin}
-                            onChange={(e) => handleInputChange('fecha_fin', e.target.value)}
+                            onChange={(e) => {
+                              handleInputChange('fecha_fin', e.target.value)
+                              // Para Día de la Familia, sincronizar automáticamente fecha_inicio con fecha_fin
+                              if (selectedType.id === 'dia_familia') {
+                                handleInputChange('fecha_inicio', e.target.value)
+                              }
+                            }}
                             min={formData.fecha_inicio}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             required
                           />
+                          {selectedType.id === 'dia_familia' && (
+                            <p className="text-xs text-pink-600 mt-1">
+                              💡 La fecha de fin se sincronizará automáticamente con la fecha de inicio
+                            </p>
+                          )}
                         </div>
                       </div>
+
+                      {/* Validación para Día de la Familia */}
+                      {selectedType.id === 'dia_familia' && formData.fecha_inicio && formData.fecha_fin && formData.fecha_inicio !== formData.fecha_fin && (
+                        <div className="p-4 rounded-lg border bg-red-50 border-red-200">
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                            <p className="text-sm font-medium text-red-800">
+                              ⚠️ El Día de la Familia solo puede durar un día. Las fechas deben ser iguales.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Cálculo automático de días */}
                       {formData.fecha_inicio && formData.fecha_fin && (
                         <div className={`p-4 rounded-lg border ${
                           selectedType.id === 'vacaciones' 
                             ? 'bg-green-50 border-green-200' 
-                            : 'bg-orange-50 border-orange-200'
+                            : selectedType.id === 'suspension'
+                            ? 'bg-orange-50 border-orange-200'
+                            : 'bg-pink-50 border-pink-200'
                         }`}>
                           <div className="flex items-center justify-between flex-wrap gap-2">
                             <p className={`text-sm font-medium ${
-                              selectedType.id === 'vacaciones' ? 'text-green-800' : 'text-orange-800'
+                              selectedType.id === 'vacaciones' ? 'text-green-800' : 
+                              selectedType.id === 'suspension' ? 'text-orange-800' :
+                              'text-pink-800'
                             }`}>
                               📅 Duración calculada:
                             </p>
                             <span className={`font-bold text-lg ${
-                              selectedType.id === 'vacaciones' ? 'text-green-900' : 'text-orange-900'
+                              selectedType.id === 'vacaciones' ? 'text-green-900' : 
+                              selectedType.id === 'suspension' ? 'text-orange-900' :
+                              'text-pink-900'
                             }`}>
-                              {calculateDias()} días
+                              {calculateDias()} {selectedType.id === 'dia_familia' ? 'día' : 'días'}
                             </span>
                           </div>
                           
@@ -875,6 +938,8 @@ export default function NovedadTiempoLaboralModal({
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   {selectedType.id === 'prorroga' && contractInfo.tipo_contrato === 'fijo' 
                     ? 'Observaciones de la Prórroga *'
+                    : selectedType.id === 'dia_familia'
+                    ? 'Observaciones *'
                     : `Motivo de la ${selectedType.label} *`
                   }
                 </label>
@@ -884,6 +949,8 @@ export default function NovedadTiempoLaboralModal({
                   placeholder={
                     selectedType.id === 'prorroga' && contractInfo.tipo_contrato === 'fijo'
                       ? 'Observaciones adicionales sobre la prórroga...'
+                      : selectedType.id === 'dia_familia'
+                      ? 'Observaciones sobre el Día de la Familia...'
                       : `Describe la razón de la ${selectedType.label.toLowerCase()}...`
                   }
                   rows={4}
