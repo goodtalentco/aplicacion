@@ -98,8 +98,10 @@ export default function ContractModal({
     salario: 0,
     auxilios: [] as Auxilio[],
     auxilio_transporte: 0,
-  tiene_condicion_medica: false,
-  condicion_medica_detalle: '',
+    tiene_condicion_medica: false,
+    condicion_medica_detalle: '',
+    fuero: false,
+    fuero_detalle: '',
   beneficiario_hijo: 0,
   beneficiario_madre: 0,
   beneficiario_padre: 0,
@@ -606,6 +608,8 @@ export default function ContractModal({
           auxilio_transporte: contract.auxilio_transporte || 0,
           tiene_condicion_medica: contract.tiene_condicion_medica || false,
           condicion_medica_detalle: contract.condicion_medica_detalle || '',
+          fuero: contract.fuero || false,
+          fuero_detalle: contract.fuero_detalle || '',
           beneficiario_hijo: contract.beneficiario_hijo || 0,
           beneficiario_madre: contract.beneficiario_madre || 0,
           beneficiario_padre: contract.beneficiario_padre || 0,
@@ -755,6 +759,12 @@ export default function ContractModal({
     if (formData.tiene_condicion_medica && !(typeof formData.condicion_medica_detalle === 'string' && formData.condicion_medica_detalle.trim())) {
       newErrors.condicion_medica_detalle = 'Debe describir la condición médica cuando está marcada'
       errorsByTab[1].push('condicion_medica_detalle')
+    }
+
+    // Validación de fuero
+    if (formData.fuero && !(typeof formData.fuero_detalle === 'string' && formData.fuero_detalle.trim())) {
+      newErrors.fuero_detalle = 'Debe describir el fuero cuando está marcado'
+      errorsByTab[1].push('fuero_detalle')
     }
 
     // Tab 2 (Onboarding) - Validaciones estrictas
@@ -1319,6 +1329,8 @@ export default function ContractModal({
         auxilio_transporte: formData.auxilio_transporte || null,
         tiene_condicion_medica: formData.tiene_condicion_medica || false,
         condicion_medica_detalle: (typeof formData.condicion_medica_detalle === 'string' && formData.condicion_medica_detalle.trim()) || null,
+        fuero: formData.fuero || false,
+        fuero_detalle: (typeof formData.fuero_detalle === 'string' && formData.fuero_detalle.trim()) || null,
         beneficiario_hijo: formData.beneficiario_hijo,
         beneficiario_madre: formData.beneficiario_madre,
         beneficiario_padre: formData.beneficiario_padre,
@@ -2320,6 +2332,37 @@ export default function ContractModal({
                         <div className="text-xs text-gray-500 mt-1">
                           Esta información es confidencial y se usará únicamente para adaptar el puesto de trabajo.
                         </div>
+                      </div>
+                    )}
+
+                    {/* Fuero */}
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="fuero"
+                        checked={formData.fuero}
+                        onChange={(e) => !isReadOnly && handleInputChange('fuero', e.target.checked)}
+                        {...getCheckboxProps()}
+                      />
+                      <label htmlFor="fuero" className="text-sm font-medium text-gray-700">
+                        ¿El empleado cuenta con fuero?
+                      </label>
+                    </div>
+
+                    {/* Campo de detalle solo si tiene fuero */}
+                    {formData.fuero && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Descripción del Fuero *
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={formData.fuero_detalle || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('fuero_detalle', e.target.value)}
+                          {...getInputProps('fuero_detalle')}
+                          placeholder="Describe el fuero del empleado"
+                          style={{ resize: 'none' }}
+                        />
                       </div>
                     )}
                   </div>

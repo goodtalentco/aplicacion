@@ -57,6 +57,9 @@ export interface Contract {
   // Nuevos campos de condición médica
   tiene_condicion_medica?: boolean
   condicion_medica_detalle?: string | null
+  // Campo de fuero
+  fuero?: boolean
+  fuero_detalle?: string | null
   beneficiario_hijo: number
   beneficiario_madre: number
   beneficiario_padre: number
