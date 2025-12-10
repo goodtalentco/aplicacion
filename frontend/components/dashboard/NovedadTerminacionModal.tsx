@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, AlertTriangle, Save, AlertCircle, ArrowLeft, Calendar, FileText, XCircle } from 'lucide-react'
+import { X, AlertTriangle, Save, AlertCircle, ArrowLeft, Calendar, FileText, XCircle, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { usePermissions } from '@/lib/usePermissions'
 import { getDateLimits, validateDateInput } from '@/utils/dateValidation'
@@ -70,6 +70,16 @@ const TERMINACION_OPTIONS: TerminacionOption[] = [
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200',
+    requiresIndemnization: false
+  },
+  {
+    value: 'renuncia_voluntaria',
+    label: 'Renuncia Voluntaria',
+    description: 'El empleado decide terminar el contrato por su propia voluntad',
+    icon: LogOut,
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200',
     requiresIndemnization: false
   }
 ]
