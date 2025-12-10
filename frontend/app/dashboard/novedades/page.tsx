@@ -61,22 +61,31 @@ export default function NovedadesPage() {
 
   // Cargar todas las novedades
   const loadNovelties = async () => {
-    if (loadingRef) return
+    console.log('📥 loadNovelties llamado')
+    
+    if (loadingRef) {
+      console.log('⏸️ Ya hay una carga en progreso')
+      return
+    }
     
     // Check cache first
     const cached = localStorage.getItem('novelties_cache')
     if (cached && !dataLoaded) {
+      console.log('💾 Cache encontrado, verificando validez...')
       const parsed = JSON.parse(cached)
       if (Date.now() - parsed.timestamp < 300000) { // 5min cache
+        console.log('✅ Usando cache')
         setNovelties(parsed.data)
         setFilteredNovelties(parsed.data)
         setDataLoaded(true)
         setLoading(false)
         return
       }
+      console.log('⏰ Cache expirado, limpiando...')
       localStorage.removeItem('novelties_cache')
     }
     
+    console.log('🔄 Iniciando carga desde Supabase...')
     setLoadingRef(true)
     setLoading(true)
     setError(null)
@@ -408,6 +417,8 @@ export default function NovedadesPage() {
       // Ordenar por fecha de creación (más recientes primero)
       allNovelties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
+      console.log(`✅ Carga completada: ${allNovelties.length} novedades encontradas`)
+
       // Guardar en cache
       localStorage.setItem('novelties_cache', JSON.stringify({
         data: allNovelties,
@@ -419,7 +430,7 @@ export default function NovedadesPage() {
       setDataLoaded(true)
       
       if (allNovelties.length === 0) {
-        console.warn('No se encontraron novedades')
+        console.warn('⚠️ No se encontraron novedades')
       }
     } catch (error: any) {
       console.error('Error loading novelties:', error)
@@ -431,10 +442,30 @@ export default function NovedadesPage() {
   }
 
   useEffect(() => {
+    console.log('🔍 Novedades useEffect:', {
+      permissionsLoading,
+      permissionsLength: permissions.length,
+      canRead,
+      dataLoaded,
+      loadingRef,
+      loading
+    })
+    
     const shouldLoad = !permissionsLoading && permissions.length > 0 && canRead && !dataLoaded && !loadingRef
+    
+    console.log('🔍 shouldLoad:', shouldLoad)
+    
     if (shouldLoad) {
+      console.log('✅ Iniciando carga de novedades...')
       loadNovelties()
+    } else if (!permissionsLoading && permissions.length === 0) {
+      console.log('⚠️ No hay permisos, deteniendo carga')
+      setLoading(false)
     } else if (dataLoaded) {
+      console.log('✅ Datos ya cargados')
+      setLoading(false)
+    } else if (!canRead && !permissionsLoading) {
+      console.log('⚠️ No tiene permisos de lectura')
       setLoading(false)
     }
   }, [permissionsLoading, permissions.length, canRead, dataLoaded])
