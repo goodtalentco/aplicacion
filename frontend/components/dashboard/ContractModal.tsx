@@ -102,6 +102,7 @@ export default function ContractModal({
     condicion_medica_detalle: '',
     fuero: false,
     fuero_detalle: '',
+    pensionado: false,
   beneficiario_hijo: 0,
   beneficiario_madre: 0,
   beneficiario_padre: 0,
@@ -610,6 +611,7 @@ export default function ContractModal({
           condicion_medica_detalle: contract.condicion_medica_detalle || '',
           fuero: contract.fuero || false,
           fuero_detalle: contract.fuero_detalle || '',
+          pensionado: contract.pensionado || false,
           beneficiario_hijo: contract.beneficiario_hijo || 0,
           beneficiario_madre: contract.beneficiario_madre || 0,
           beneficiario_padre: contract.beneficiario_padre || 0,
@@ -1331,6 +1333,7 @@ export default function ContractModal({
         condicion_medica_detalle: (typeof formData.condicion_medica_detalle === 'string' && formData.condicion_medica_detalle.trim()) || null,
         fuero: formData.fuero || false,
         fuero_detalle: (typeof formData.fuero_detalle === 'string' && formData.fuero_detalle.trim()) || null,
+        pensionado: formData.pensionado || false,
         beneficiario_hijo: formData.beneficiario_hijo,
         beneficiario_madre: formData.beneficiario_madre,
         beneficiario_padre: formData.beneficiario_padre,
@@ -2366,6 +2369,20 @@ export default function ContractModal({
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Pensionado */}
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="pensionado"
+                    checked={formData.pensionado}
+                    onChange={(e) => !isReadOnly && handleInputChange('pensionado', e.target.checked)}
+                    {...getCheckboxProps()}
+                  />
+                  <label htmlFor="pensionado" className="text-sm font-medium text-gray-700">
+                    ¿Es pensionado?
+                  </label>
                 </div>
 
                 {/* Beneficiarios */}

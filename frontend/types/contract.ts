@@ -60,6 +60,8 @@ export interface Contract {
   // Campo de fuero
   fuero?: boolean
   fuero_detalle?: string | null
+  // Campo de pensionado
+  pensionado?: boolean
   beneficiario_hijo: number
   beneficiario_madre: number
   beneficiario_padre: number
