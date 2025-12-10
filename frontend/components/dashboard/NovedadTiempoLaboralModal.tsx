@@ -299,7 +299,8 @@ export default function NovedadTiempoLaboralModal({
     const fin = new Date(formData.fecha_fin)
     const diffTime = fin.getTime() - inicio.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays > 0 ? diffDays : 0
+    // Si las fechas son iguales o la diferencia es 0, retornar 1 día
+    return diffDays >= 0 ? (diffDays === 0 ? 1 : diffDays) : 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
