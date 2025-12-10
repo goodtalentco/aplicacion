@@ -1,31 +1,496 @@
 'use client'
 
-import { Bell, Plus, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, Search, Filter, Eye, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
+import { usePermissions } from '@/lib/usePermissions'
+import { formatDateColombia } from '@/utils/dateUtils'
 
 /**
  * Página del módulo Novedades
- * Placeholder para futuro desarrollo
+ * Vista unificada de todas las novedades de todos los contratos
  */
+
+interface UnifiedNovelty {
+  id: string
+  contract_id: string
+  employee_name: string
+  employee_id: string
+  type: 'datos_personales' | 'cambio_cargo' | 'entidades' | 'economicas' | 'tiempo_laboral' | 'incapacidad' | 'beneficiarios' | 'terminacion'
+  type_label: string
+  title: string
+  description: string
+  fecha: string
+  fecha_aplicacion: string
+  created_at: string
+  created_by: string
+  created_by_email: string
+  details: any
+  table_source: string
+}
+
+const NOVELTY_TYPES = [
+  { value: 'all', label: 'Todos los tipos' },
+  { value: 'datos_personales', label: 'Datos Personales' },
+  { value: 'cambio_cargo', label: 'Cambio de Cargo' },
+  { value: 'entidades', label: 'Entidades' },
+  { value: 'economicas', label: 'Económicas' },
+  { value: 'tiempo_laboral', label: 'Tiempo Laboral' },
+  { value: 'incapacidad', label: 'Incapacidades' },
+  { value: 'beneficiarios', label: 'Beneficiarios' },
+  { value: 'terminacion', label: 'Terminación' }
+]
+
 export default function NovedadesPage() {
+  const { permissions, loading: permissionsLoading } = usePermissions()
+  const [novelties, setNovelties] = useState<UnifiedNovelty[]>([])
+  const [filteredNovelties, setFilteredNovelties] = useState<UnifiedNovelty[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadingRef, setLoadingRef] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState('all')
+  const [filterDateFrom, setFilterDateFrom] = useState('')
+  const [filterDateTo, setFilterDateTo] = useState('')
+  const [selectedNovelty, setSelectedNovelty] = useState<UnifiedNovelty | null>(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
+  const canRead = permissions.some(p => p.resource === 'contracts' && p.action === 'read')
+
+  // Cargar todas las novedades
+  const loadNovelties = async () => {
+    if (loadingRef) return
+    
+    // Check cache first
+    const cached = localStorage.getItem('novelties_cache')
+    if (cached && !dataLoaded) {
+      const parsed = JSON.parse(cached)
+      if (Date.now() - parsed.timestamp < 300000) { // 5min cache
+        setNovelties(parsed.data)
+        setFilteredNovelties(parsed.data)
+        setDataLoaded(true)
+        setLoading(false)
+        return
+      }
+      localStorage.removeItem('novelties_cache')
+    }
+    
+    setLoadingRef(true)
+    setLoading(true)
+    
+    try {
+      const allNovelties: UnifiedNovelty[] = []
+
+      // 1. Cargar contratos para obtener nombres de empleados
+      const { data: contracts } = await supabase
+        .from('contracts')
+        .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion')
+
+      const contractsMap = new Map(
+        contracts?.map(c => [
+          c.id,
+          {
+            name: `${c.primer_nombre} ${c.segundo_nombre || ''} ${c.primer_apellido} ${c.segundo_apellido || ''}`.trim(),
+            id: c.numero_identificacion
+          }
+        ]) || []
+      )
+
+      // 2. Cargar novedades_datos_personales
+      const { data: datosPersonales } = await supabase
+        .from('novedades_datos_personales')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      datosPersonales?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        allNovelties.push({
+          id: `datos_personales_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'datos_personales',
+          type_label: 'Datos Personales',
+          title: `Cambio de ${n.campo}`,
+          description: `${n.campo}: ${n.valor_anterior || 'N/A'} → ${n.valor_nuevo}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_datos_personales'
+        })
+      })
+
+      // 3. Cargar novedades_cambio_cargo
+      const { data: cambioCargo } = await supabase
+        .from('novedades_cambio_cargo')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      cambioCargo?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        allNovelties.push({
+          id: `cambio_cargo_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'cambio_cargo',
+          type_label: 'Cambio de Cargo',
+          title: 'Cambio de Cargo',
+          description: `${n.cargo_anterior || 'N/A'} → ${n.cargo_nuevo}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_cambio_cargo'
+        })
+      })
+
+      // 4. Cargar novedades_entidades
+      const { data: entidades } = await supabase
+        .from('novedades_entidades')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      entidades?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        allNovelties.push({
+          id: `entidades_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'entidades',
+          type_label: 'Entidades',
+          title: `Cambio de ${n.tipo}`,
+          description: `${n.entidad_anterior || 'N/A'} → ${n.entidad_nueva}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_entidades'
+        })
+      })
+
+      // 5. Cargar novedades_economicas
+      const { data: economicas } = await supabase
+        .from('novedades_economicas')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      economicas?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        const valorAnterior = n.valor_anterior ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n.valor_anterior) : 'N/A'
+        const valorNuevo = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n.valor_nuevo)
+        allNovelties.push({
+          id: `economicas_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'economicas',
+          type_label: 'Económicas',
+          title: `Cambio ${n.tipo}${n.concepto ? ` - ${n.concepto}` : ''}`,
+          description: `${valorAnterior} → ${valorNuevo}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_economicas'
+        })
+      })
+
+      // 6. Cargar novedades_tiempo_laboral
+      const { data: tiempoLaboral } = await supabase
+        .from('novedades_tiempo_laboral')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      tiempoLaboral?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        let title = ''
+        let description = ''
+        
+        if (n.tipo_tiempo === 'prorroga') {
+          title = 'Prórroga de Contrato'
+          description = `Prórroga hasta ${n.nueva_fecha_fin || 'N/A'}`
+        } else if (n.tipo_tiempo === 'vacaciones') {
+          title = 'Vacaciones'
+          description = `Del ${n.fecha_inicio} al ${n.fecha_fin || 'N/A'} (${n.dias || 0} días)`
+        } else if (n.tipo_tiempo === 'suspension') {
+          title = 'Suspensión'
+          description = `Del ${n.fecha_inicio} al ${n.fecha_fin || 'N/A'} (${n.dias || 0} días)`
+        } else if (n.tipo_tiempo === 'dia_familia') {
+          title = 'Día de la Familia'
+          description = `${n.fecha_inicio} (${n.dias || 1} día)`
+        } else {
+          title = 'Tiempo Laboral'
+          description = `${n.tipo_tiempo} del ${n.fecha_inicio} al ${n.fecha_fin || 'N/A'}`
+        }
+        
+        allNovelties.push({
+          id: `tiempo_laboral_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'tiempo_laboral',
+          type_label: 'Tiempo Laboral',
+          title,
+          description,
+          fecha: n.fecha_inicio,
+          fecha_aplicacion: n.fecha_inicio,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_tiempo_laboral'
+        })
+      })
+
+      // 7. Cargar novedades_incapacidad
+      const { data: incapacidad } = await supabase
+        .from('novedades_incapacidad')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      incapacidad?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        allNovelties.push({
+          id: `incapacidad_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'incapacidad',
+          type_label: 'Incapacidades',
+          title: `Incapacidad ${n.tipo_incapacidad}`,
+          description: `Del ${n.fecha_inicio} al ${n.fecha_fin || 'N/A'} (${n.dias || 0} días)`,
+          fecha: n.fecha_inicio,
+          fecha_aplicacion: n.fecha_inicio,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_incapacidad'
+        })
+      })
+
+      // 8. Cargar novedades_beneficiarios
+      const { data: beneficiarios } = await supabase
+        .from('novedades_beneficiarios')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      beneficiarios?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        const tipoLabel = n.tipo_beneficiario === 'hijo' ? 'Hijos' : 
+                         n.tipo_beneficiario === 'madre' ? 'Madre' :
+                         n.tipo_beneficiario === 'padre' ? 'Padre' : 'Cónyuge'
+        allNovelties.push({
+          id: `beneficiarios_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'beneficiarios',
+          type_label: 'Beneficiarios',
+          title: `Cambio de ${tipoLabel}`,
+          description: `${n.valor_anterior || 0} → ${n.valor_nuevo}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_beneficiarios'
+        })
+      })
+
+      // 9. Cargar novedades_terminacion
+      const { data: terminacion } = await supabase
+        .from('novedades_terminacion')
+        .select(`
+          *,
+          usuario:usuarios_basicos!created_by (email)
+        `)
+        .order('created_at', { ascending: false })
+
+      terminacion?.forEach((n: any) => {
+        const contract = contractsMap.get(n.contract_id)
+        const tipoLabel = n.tipo_terminacion === 'justa_causa' ? 'Justa Causa' :
+                         n.tipo_terminacion === 'sin_justa_causa' ? 'Sin Justa Causa' :
+                         n.tipo_terminacion === 'mutuo_acuerdo' ? 'Mutuo Acuerdo' :
+                         n.tipo_terminacion === 'vencimiento' ? 'Vencimiento' :
+                         n.tipo_terminacion === 'renuncia_voluntaria' ? 'Renuncia Voluntaria' : n.tipo_terminacion
+        allNovelties.push({
+          id: `terminacion_${n.id}`,
+          contract_id: n.contract_id,
+          employee_name: contract?.name || 'Empleado no encontrado',
+          employee_id: contract?.id || '',
+          type: 'terminacion',
+          type_label: 'Terminación',
+          title: 'Terminación de Contrato',
+          description: `Terminación por ${tipoLabel}`,
+          fecha: n.fecha,
+          fecha_aplicacion: n.fecha,
+          created_at: n.created_at,
+          created_by: n.created_by,
+          created_by_email: n.usuario?.email || 'Usuario desconocido',
+          details: n,
+          table_source: 'novedades_terminacion'
+        })
+      })
+
+      // Ordenar por fecha de creación (más recientes primero)
+      allNovelties.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      // Guardar en cache
+      localStorage.setItem('novelties_cache', JSON.stringify({
+        data: allNovelties,
+        timestamp: Date.now()
+      }))
+
+      setNovelties(allNovelties)
+      setFilteredNovelties(allNovelties)
+      setDataLoaded(true)
+    } catch (error) {
+      console.error('Error loading novelties:', error)
+    } finally {
+      setLoading(false)
+      setLoadingRef(false)
+    }
+  }
+
+  useEffect(() => {
+    const shouldLoad = !permissionsLoading && permissions.length > 0 && canRead && !dataLoaded && !loadingRef
+    if (shouldLoad) {
+      loadNovelties()
+    } else if (dataLoaded) {
+      setLoading(false)
+    }
+  }, [permissionsLoading, permissions.length, canRead, dataLoaded])
+
+  // Filtrar novedades
+  useEffect(() => {
+    let filtered = [...novelties]
+
+    // Filtro por búsqueda
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(n => 
+        n.employee_name.toLowerCase().includes(searchLower) ||
+        n.employee_id.toLowerCase().includes(searchLower) ||
+        n.title.toLowerCase().includes(searchLower) ||
+        n.description.toLowerCase().includes(searchLower) ||
+        n.type_label.toLowerCase().includes(searchLower)
+      )
+    }
+
+    // Filtro por tipo
+    if (filterType !== 'all') {
+      filtered = filtered.filter(n => n.type === filterType)
+    }
+
+    // Filtro por fecha
+    if (filterDateFrom) {
+      filtered = filtered.filter(n => n.fecha >= filterDateFrom)
+    }
+    if (filterDateTo) {
+      filtered = filtered.filter(n => n.fecha <= filterDateTo)
+    }
+
+    setFilteredNovelties(filtered)
+  }, [novelties, searchTerm, filterType, filterDateFrom, filterDateTo])
+
+  const handleViewDetail = (novelty: UnifiedNovelty) => {
+    setSelectedNovelty(novelty)
+    setShowDetailModal(true)
+  }
+
+  const getTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      datos_personales: 'bg-blue-50 text-blue-700 border-blue-200',
+      cambio_cargo: 'bg-purple-50 text-purple-700 border-purple-200',
+      entidades: 'bg-red-50 text-red-700 border-red-200',
+      economicas: 'bg-green-50 text-green-700 border-green-200',
+      tiempo_laboral: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      incapacidad: 'bg-orange-50 text-orange-700 border-orange-200',
+      beneficiarios: 'bg-teal-50 text-teal-700 border-teal-200',
+      terminacion: 'bg-gray-50 text-gray-700 border-gray-200'
+    }
+    return colors[type] || 'bg-gray-50 text-gray-700 border-gray-200'
+  }
+
+  if (loading && !dataLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#87E0E0] mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando novedades...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">No tienes permisos para ver las novedades</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
             <Bell className="h-8 w-8 text-[#87E0E0]" />
             <span>Novedades</span>
           </h1>
           <p className="text-gray-600 mt-2">
-            Gestión de novedades, incidencias y comunicaciones
+            Histórico completo de todas las novedades laborales
           </p>
         </div>
-        
-        <button className="bg-gradient-to-r from-[#004C4C] to-[#065C5C] text-white px-6 py-3 rounded-xl font-semibold hover:from-[#065C5C] hover:to-[#0A6A6A] transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2">
-          <Plus className="h-5 w-5" />
-          <span>Nueva Novedad</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            <Filter className="h-4 w-4" />
+            <span>Filtros</span>
+            {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -36,58 +501,219 @@ export default function NovedadesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar novedades por empleado, tipo o descripción..."
+                placeholder="Buscar por empleado, tipo o descripción..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
               />
             </div>
           </div>
           <div className="flex space-x-3">
-            <select className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent">
-              <option>Todas las novedades</option>
-              <option>Pendientes</option>
-              <option>Procesadas</option>
-              <option>Rechazadas</option>
-            </select>
-            <select className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent">
-              <option>Todos los tipos</option>
-              <option>Licencias</option>
-              <option>Permisos</option>
-              <option>Incapacidades</option>
-              <option>Vacaciones</option>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+            >
+              {NOVELTY_TYPES.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
             </select>
           </div>
+        </div>
+
+        {/* Filtros avanzados */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha desde
+                </label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha hasta
+                </label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                />
+              </div>
+            </div>
+            {(filterDateFrom || filterDateTo) && (
+              <button
+                onClick={() => {
+                  setFilterDateFrom('')
+                  setFilterDateTo('')
+                }}
+                className="mt-3 text-sm text-[#065C5C] hover:text-[#004C4C] flex items-center space-x-1"
+              >
+                <X className="h-3 w-3" />
+                <span>Limpiar filtros de fecha</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Results Count */}
+      <div className="text-sm text-gray-600">
+        Mostrando {filteredNovelties.length} de {novelties.length} novedades
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empleado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado por</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredNovelties.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                    {novelties.length === 0 ? 'No hay novedades registradas' : 'No se encontraron novedades con los filtros aplicados'}
+                  </td>
+                </tr>
+              ) : (
+                filteredNovelties.map((novelty) => (
+                  <tr key={novelty.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDateColombia(novelty.fecha_aplicacion)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{novelty.employee_name}</div>
+                      <div className="text-xs text-gray-500">ID: {novelty.employee_id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(novelty.type)}`}>
+                        {novelty.type_label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{novelty.title}</div>
+                      <div className="text-xs text-gray-500 mt-1">{novelty.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {novelty.created_by_email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleViewDetail(novelty)}
+                        className="text-[#065C5C] hover:text-[#004C4C] flex items-center space-x-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>Ver</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Coming Soon Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Bell className="h-12 w-12 text-white" />
-          </div>
-          
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            Módulo en Desarrollo
-          </h3>
-          
-          <p className="text-gray-600 mb-6">
-            El módulo de novedades estará disponible próximamente. 
-            Incluirá herramientas para gestionar todas las incidencias y comunicaciones.
-          </p>
-          
-          <div className="space-y-3 text-left bg-gray-50 rounded-xl p-4">
-            <h4 className="font-semibold text-gray-900">Funcionalidades planificadas:</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li>• Registro de novedades</li>
-              <li>• Gestión de permisos y licencias</li>
-              <li>• Solicitudes de vacaciones</li>
-              <li>• Incapacidades médicas</li>
-              <li>• Comunicaciones internas</li>
-              <li>• Reportes de ausentismo</li>
-            </ul>
+      {/* Detail Modal */}
+      {showDetailModal && selectedNovelty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Detalle de Novedad</h2>
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false)
+                    setSelectedNovelty(null)
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Información básica */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Empleado</label>
+                  <p className="text-sm font-medium text-gray-900">{selectedNovelty.employee_name}</p>
+                  <p className="text-xs text-gray-500">ID: {selectedNovelty.employee_id}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(selectedNovelty.type)}`}>
+                    {selectedNovelty.type_label}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Fecha de Aplicación</label>
+                  <p className="text-sm text-gray-900">{formatDateColombia(selectedNovelty.fecha_aplicacion)}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Fecha de Registro</label>
+                  <p className="text-sm text-gray-900">{formatDateColombia(selectedNovelty.created_at)}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Creado por</label>
+                  <p className="text-sm text-gray-900">{selectedNovelty.created_by_email}</p>
+                </div>
+              </div>
+
+              {/* Detalles específicos */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Detalles</h3>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Título: </span>
+                    <span className="text-gray-900">{selectedNovelty.title}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Descripción: </span>
+                    <span className="text-gray-900">{selectedNovelty.description}</span>
+                  </div>
+                  {selectedNovelty.details.observacion && (
+                    <div>
+                      <span className="font-medium text-gray-700">Observaciones: </span>
+                      <span className="text-gray-900">{selectedNovelty.details.observacion}</span>
+                    </div>
+                  )}
+                  {selectedNovelty.details.motivo && (
+                    <div>
+                      <span className="font-medium text-gray-700">Motivo: </span>
+                      <span className="text-gray-900">{selectedNovelty.details.motivo}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Datos completos en JSON (para debugging) */}
+              <details className="bg-gray-50 rounded-lg p-4">
+                <summary className="text-sm font-medium text-gray-700 cursor-pointer">Ver datos completos (JSON)</summary>
+                <pre className="mt-2 text-xs text-gray-600 overflow-x-auto">
+                  {JSON.stringify(selectedNovelty.details, null, 2)}
+                </pre>
+              </details>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
