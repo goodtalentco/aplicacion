@@ -16,6 +16,7 @@ interface UnifiedNovelty {
   contract_id: string
   employee_name: string
   employee_id: string
+  is_active: boolean // Indica si el empleado está activo (archived_at IS NULL)
   type: 'datos_personales' | 'cambio_cargo' | 'entidades' | 'economicas' | 'tiempo_laboral' | 'incapacidad' | 'beneficiarios' | 'terminacion'
   type_label: string
   title: string
@@ -52,6 +53,9 @@ export default function NovedadesPage() {
   const [filterType, setFilterType] = useState('all')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
+  const [filterEmployee, setFilterEmployee] = useState('all')
+  const [filterEmployeeStatus, setFilterEmployeeStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [employees, setEmployees] = useState<Array<{id: string, name: string, is_active: boolean}>>([])
   const [selectedNovelty, setSelectedNovelty] = useState<UnifiedNovelty | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -105,7 +109,8 @@ export default function NovedadesPage() {
       // 1. Cargar contratos para obtener nombres de empleados
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion')
+        .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion, archived_at')
+        .order('primer_nombre', { ascending: true })
 
       if (contractsError) {
         console.error('Error loading contracts:', contractsError)
@@ -116,10 +121,19 @@ export default function NovedadesPage() {
           c.id,
           {
             name: `${c.primer_nombre} ${c.segundo_nombre || ''} ${c.primer_apellido} ${c.segundo_apellido || ''}`.trim(),
-            id: c.numero_identificacion
+            id: c.numero_identificacion,
+            is_active: !c.archived_at
           }
         ]) || []
       )
+
+      // Guardar lista de empleados para el dropdown
+      const employeesList = Array.from(contractsMap.entries()).map(([id, data]) => ({
+        id,
+        name: data.name,
+        is_active: data.is_active
+      }))
+      setEmployees(employeesList)
 
       // 2. Cargar novedades_datos_personales
       const { data: datosPersonales, error: datosPersonalesError } = await supabase
@@ -141,6 +155,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'datos_personales',
           type_label: 'Datos Personales',
           title: `Cambio de ${n.campo}`,
@@ -175,6 +190,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'cambio_cargo',
           type_label: 'Cambio de Cargo',
           title: 'Cambio de Cargo',
@@ -209,6 +225,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'entidades',
           type_label: 'Entidades',
           title: `Cambio de ${n.tipo}`,
@@ -245,6 +262,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'economicas',
           type_label: 'Económicas',
           title: `Cambio ${n.tipo}${n.concepto ? ` - ${n.concepto}` : ''}`,
@@ -299,6 +317,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'tiempo_laboral',
           type_label: 'Tiempo Laboral',
           title,
@@ -333,6 +352,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'incapacidad',
           type_label: 'Incapacidades',
           title: `Incapacidad ${n.tipo_incapacidad}`,
@@ -370,6 +390,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'beneficiarios',
           type_label: 'Beneficiarios',
           title: `Cambio de ${tipoLabel}`,
@@ -409,6 +430,7 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          is_active: contract?.is_active ?? true,
           type: 'terminacion',
           type_label: 'Terminación',
           title: 'Terminación de Contrato',
@@ -508,8 +530,21 @@ export default function NovedadesPage() {
       filtered = filtered.filter(n => n.fecha <= filterDateTo)
     }
 
+    // Filtro por empleado
+    if (filterEmployee !== 'all') {
+      filtered = filtered.filter(n => n.contract_id === filterEmployee)
+    }
+
+    // Filtro por estado del empleado (activo/inactivo)
+    if (filterEmployeeStatus === 'active') {
+      filtered = filtered.filter(n => n.is_active === true)
+    } else if (filterEmployeeStatus === 'inactive') {
+      filtered = filtered.filter(n => n.is_active === false)
+    }
+    // Si es 'all', no se filtra
+
     setFilteredNovelties(filtered)
-  }, [novelties, searchTerm, filterType, filterDateFrom, filterDateTo])
+  }, [novelties, searchTerm, filterType, filterDateFrom, filterDateTo, filterEmployee, filterEmployeeStatus])
 
   const handleViewDetail = (novelty: UnifiedNovelty) => {
     setSelectedNovelty(novelty)
@@ -622,7 +657,38 @@ export default function NovedadesPage() {
         {/* Filtros avanzados */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empleado
+                </label>
+                <select
+                  value={filterEmployee}
+                  onChange={(e) => setFilterEmployee(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                >
+                  <option value="all">Todos los empleados</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name} {emp.is_active ? '' : '(Inactivo)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estado del empleado
+                </label>
+                <select
+                  value={filterEmployeeStatus}
+                  onChange={(e) => setFilterEmployeeStatus(e.target.value as 'all' | 'active' | 'inactive')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Solo activos</option>
+                  <option value="inactive">Solo inactivos</option>
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fecha desde
@@ -646,16 +712,18 @@ export default function NovedadesPage() {
                 />
               </div>
             </div>
-            {(filterDateFrom || filterDateTo) && (
+            {(filterDateFrom || filterDateTo || filterEmployee !== 'all' || filterEmployeeStatus !== 'all') && (
               <button
                 onClick={() => {
                   setFilterDateFrom('')
                   setFilterDateTo('')
+                  setFilterEmployee('all')
+                  setFilterEmployeeStatus('all')
                 }}
                 className="mt-3 text-sm text-[#065C5C] hover:text-[#004C4C] flex items-center space-x-1"
               >
                 <X className="h-3 w-3" />
-                <span>Limpiar filtros de fecha</span>
+                <span>Limpiar todos los filtros</span>
               </button>
             )}
           </div>
