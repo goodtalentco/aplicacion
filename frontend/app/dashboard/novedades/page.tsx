@@ -55,6 +55,7 @@ export default function NovedadesPage() {
   const [selectedNovelty, setSelectedNovelty] = useState<UnifiedNovelty | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const canRead = permissions.some(p => p.table_name === 'contracts' && p.action === 'read')
 
@@ -78,14 +79,19 @@ export default function NovedadesPage() {
     
     setLoadingRef(true)
     setLoading(true)
+    setError(null)
     
     try {
       const allNovelties: UnifiedNovelty[] = []
 
       // 1. Cargar contratos para obtener nombres de empleados
-      const { data: contracts } = await supabase
+      const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
         .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion')
+
+      if (contractsError) {
+        console.error('Error loading contracts:', contractsError)
+      }
 
       const contractsMap = new Map(
         contracts?.map(c => [
@@ -98,13 +104,17 @@ export default function NovedadesPage() {
       )
 
       // 2. Cargar novedades_datos_personales
-      const { data: datosPersonales } = await supabase
+      const { data: datosPersonales, error: datosPersonalesError } = await supabase
         .from('novedades_datos_personales')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (datosPersonalesError) {
+        console.error('Error loading novedades_datos_personales:', datosPersonalesError)
+      }
 
       datosPersonales?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -128,13 +138,17 @@ export default function NovedadesPage() {
       })
 
       // 3. Cargar novedades_cambio_cargo
-      const { data: cambioCargo } = await supabase
+      const { data: cambioCargo, error: cambioCargoError } = await supabase
         .from('novedades_cambio_cargo')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (cambioCargoError) {
+        console.error('Error loading novedades_cambio_cargo:', cambioCargoError)
+      }
 
       cambioCargo?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -158,13 +172,17 @@ export default function NovedadesPage() {
       })
 
       // 4. Cargar novedades_entidades
-      const { data: entidades } = await supabase
+      const { data: entidades, error: entidadesError } = await supabase
         .from('novedades_entidades')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (entidadesError) {
+        console.error('Error loading novedades_entidades:', entidadesError)
+      }
 
       entidades?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -188,13 +206,17 @@ export default function NovedadesPage() {
       })
 
       // 5. Cargar novedades_economicas
-      const { data: economicas } = await supabase
+      const { data: economicas, error: economicasError } = await supabase
         .from('novedades_economicas')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (economicasError) {
+        console.error('Error loading novedades_economicas:', economicasError)
+      }
 
       economicas?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -220,13 +242,17 @@ export default function NovedadesPage() {
       })
 
       // 6. Cargar novedades_tiempo_laboral
-      const { data: tiempoLaboral } = await supabase
+      const { data: tiempoLaboral, error: tiempoLaboralError } = await supabase
         .from('novedades_tiempo_laboral')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (tiempoLaboralError) {
+        console.error('Error loading novedades_tiempo_laboral:', tiempoLaboralError)
+      }
 
       tiempoLaboral?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -270,13 +296,17 @@ export default function NovedadesPage() {
       })
 
       // 7. Cargar novedades_incapacidad
-      const { data: incapacidad } = await supabase
+      const { data: incapacidad, error: incapacidadError } = await supabase
         .from('novedades_incapacidad')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (incapacidadError) {
+        console.error('Error loading novedades_incapacidad:', incapacidadError)
+      }
 
       incapacidad?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -300,13 +330,17 @@ export default function NovedadesPage() {
       })
 
       // 8. Cargar novedades_beneficiarios
-      const { data: beneficiarios } = await supabase
+      const { data: beneficiarios, error: beneficiariosError } = await supabase
         .from('novedades_beneficiarios')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (beneficiariosError) {
+        console.error('Error loading novedades_beneficiarios:', beneficiariosError)
+      }
 
       beneficiarios?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -333,13 +367,17 @@ export default function NovedadesPage() {
       })
 
       // 9. Cargar novedades_terminacion
-      const { data: terminacion } = await supabase
+      const { data: terminacion, error: terminacionError } = await supabase
         .from('novedades_terminacion')
         .select(`
           *,
           usuario:usuarios_basicos!created_by (email)
         `)
         .order('created_at', { ascending: false })
+
+      if (terminacionError) {
+        console.error('Error loading novedades_terminacion:', terminacionError)
+      }
 
       terminacion?.forEach((n: any) => {
         const contract = contractsMap.get(n.contract_id)
@@ -379,8 +417,13 @@ export default function NovedadesPage() {
       setNovelties(allNovelties)
       setFilteredNovelties(allNovelties)
       setDataLoaded(true)
-    } catch (error) {
+      
+      if (allNovelties.length === 0) {
+        console.warn('No se encontraron novedades')
+      }
+    } catch (error: any) {
       console.error('Error loading novelties:', error)
+      setError(error?.message || 'Error al cargar las novedades. Por favor, intenta de nuevo.')
     } finally {
       setLoading(false)
       setLoadingRef(false)
@@ -492,6 +535,21 @@ export default function NovedadesPage() {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-red-800">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-600 hover:text-red-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
