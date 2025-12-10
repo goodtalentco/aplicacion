@@ -77,9 +77,9 @@ const TERMINACION_OPTIONS: TerminacionOption[] = [
     label: 'Renuncia Voluntaria',
     description: 'El empleado decide terminar el contrato por su propia voluntad',
     icon: LogOut,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
+    color: 'text-gray-700',
+    bgColor: 'bg-gray-100',
+    borderColor: 'border-gray-400',
     requiresIndemnization: false
   }
 ]
