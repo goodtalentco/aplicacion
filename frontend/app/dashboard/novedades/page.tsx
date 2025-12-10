@@ -42,7 +42,7 @@ const NOVELTY_TYPES = [
 ]
 
 export default function NovedadesPage() {
-  const { permissions, loading: permissionsLoading } = usePermissions()
+  const { hasPermission, permissions, loading: permissionsLoading } = usePermissions()
   const [novelties, setNovelties] = useState<UnifiedNovelty[]>([])
   const [filteredNovelties, setFilteredNovelties] = useState<UnifiedNovelty[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,7 +57,16 @@ export default function NovedadesPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canRead = permissions.some(p => p.table_name === 'contracts' && p.action === 'read')
+  // Verificar permisos: las políticas RLS de novedades requieren 'contracts' con acción 'view'
+  const canRead = hasPermission('contracts', 'view')
+  
+  // Logging para debug
+  useEffect(() => {
+    console.log('🔐 Permisos del usuario:', permissions)
+    console.log('🔐 canRead:', canRead)
+    console.log('🔐 hasPermission("contracts", "view"):', hasPermission('contracts', 'view'))
+    console.log('🔐 Permisos de contracts:', permissions.filter(p => p.table_name === 'contracts'))
+  }, [permissions, canRead, hasPermission])
 
   // Cargar todas las novedades
   const loadNovelties = async () => {
