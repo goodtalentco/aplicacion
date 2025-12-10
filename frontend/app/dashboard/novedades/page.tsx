@@ -56,7 +56,7 @@ export default function NovedadesPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
-  const canRead = permissions.some(p => p.resource === 'contracts' && p.action === 'read')
+  const canRead = permissions.some(p => p.table_name === 'contracts' && p.action === 'read')
 
   // Cargar todas las novedades
   const loadNovelties = async () => {
