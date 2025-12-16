@@ -16,6 +16,8 @@ interface UnifiedNovelty {
   contract_id: string
   employee_name: string
   employee_id: string
+  empresa_id: string | null
+  empresa_name: string | null
   is_active: boolean // Indica si el empleado está activo (archived_at IS NULL)
   type: 'datos_personales' | 'cambio_cargo' | 'entidades' | 'economicas' | 'tiempo_laboral' | 'incapacidad' | 'beneficiarios' | 'terminacion'
   type_label: string
@@ -55,7 +57,9 @@ export default function NovedadesPage() {
   const [filterDateTo, setFilterDateTo] = useState('')
   const [filterEmployee, setFilterEmployee] = useState('all')
   const [filterEmployeeStatus, setFilterEmployeeStatus] = useState<'all' | 'active' | 'inactive'>('all')
+  const [filterCompanyId, setFilterCompanyId] = useState('')
   const [employees, setEmployees] = useState<Array<{id: string, name: string, is_active: boolean}>>([])
+  const [companies, setCompanies] = useState<Array<{id: string, name: string, tax_id: string}>>([])
   const [selectedNovelty, setSelectedNovelty] = useState<UnifiedNovelty | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -106,15 +110,35 @@ export default function NovedadesPage() {
     try {
       const allNovelties: UnifiedNovelty[] = []
 
-      // 1. Cargar contratos para obtener nombres de empleados
+      // 1. Cargar contratos para obtener nombres de empleados y empresas
       const { data: contracts, error: contractsError } = await supabase
         .from('contracts')
-        .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion, archived_at')
+        .select('id, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, numero_identificacion, empresa_final_id, archived_at')
         .order('primer_nombre', { ascending: true })
 
       if (contractsError) {
         console.error('Error loading contracts:', contractsError)
       }
+
+      // 2. Cargar empresas para obtener nombres
+      const { data: companiesData, error: companiesError } = await supabase
+        .from('companies')
+        .select('id, name, tax_id')
+        .eq('status', true)
+        .is('archived_at', null)
+        .order('name')
+
+      if (companiesError) {
+        console.error('Error loading companies:', companiesError)
+      }
+
+      // Crear mapa de empresas
+      const companiesMap = new Map(
+        companiesData?.map(c => [c.id, c.name]) || []
+      )
+
+      // Guardar lista de empresas para el dropdown
+      setCompanies(companiesData || [])
 
       const contractsMap = new Map(
         contracts?.map(c => [
@@ -122,6 +146,8 @@ export default function NovedadesPage() {
           {
             name: `${c.primer_nombre} ${c.segundo_nombre || ''} ${c.primer_apellido} ${c.segundo_apellido || ''}`.trim(),
             id: c.numero_identificacion,
+            empresa_id: c.empresa_final_id,
+            empresa_name: c.empresa_final_id ? companiesMap.get(c.empresa_final_id) || null : null,
             is_active: !c.archived_at
           }
         ]) || []
@@ -155,6 +181,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'datos_personales',
           type_label: 'Datos Personales',
@@ -190,6 +218,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'cambio_cargo',
           type_label: 'Cambio de Cargo',
@@ -225,6 +255,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'entidades',
           type_label: 'Entidades',
@@ -262,6 +294,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'economicas',
           type_label: 'Económicas',
@@ -317,6 +351,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'tiempo_laboral',
           type_label: 'Tiempo Laboral',
@@ -352,6 +388,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'incapacidad',
           type_label: 'Incapacidades',
@@ -390,6 +428,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'beneficiarios',
           type_label: 'Beneficiarios',
@@ -430,6 +470,8 @@ export default function NovedadesPage() {
           contract_id: n.contract_id,
           employee_name: contract?.name || 'Empleado no encontrado',
           employee_id: contract?.id || '',
+          empresa_id: contract?.empresa_id || null,
+          empresa_name: contract?.empresa_name || null,
           is_active: contract?.is_active ?? true,
           type: 'terminacion',
           type_label: 'Terminación',
@@ -511,6 +553,7 @@ export default function NovedadesPage() {
       filtered = filtered.filter(n => 
         n.employee_name.toLowerCase().includes(searchLower) ||
         n.employee_id.toLowerCase().includes(searchLower) ||
+        (n.empresa_name && n.empresa_name.toLowerCase().includes(searchLower)) ||
         n.title.toLowerCase().includes(searchLower) ||
         n.description.toLowerCase().includes(searchLower) ||
         n.type_label.toLowerCase().includes(searchLower)
@@ -543,8 +586,13 @@ export default function NovedadesPage() {
     }
     // Si es 'all', no se filtra
 
+    // Filtro por empresa
+    if (filterCompanyId) {
+      filtered = filtered.filter(n => n.empresa_id === filterCompanyId)
+    }
+
     setFilteredNovelties(filtered)
-  }, [novelties, searchTerm, filterType, filterDateFrom, filterDateTo, filterEmployee, filterEmployeeStatus])
+  }, [novelties, searchTerm, filterType, filterDateFrom, filterDateTo, filterEmployee, filterEmployeeStatus, filterCompanyId])
 
   const handleViewDetail = (novelty: UnifiedNovelty) => {
     setSelectedNovelty(novelty)
@@ -634,7 +682,7 @@ export default function NovedadesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar por empleado, tipo o descripción..."
+                placeholder="Buscar por empleado, empresa, tipo o descripción..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
@@ -657,7 +705,24 @@ export default function NovedadesPage() {
         {/* Filtros avanzados */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Empresa
+                </label>
+                <select
+                  value={filterCompanyId}
+                  onChange={(e) => setFilterCompanyId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                >
+                  <option value="">Todas las empresas</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Empleado
@@ -712,13 +777,14 @@ export default function NovedadesPage() {
                 />
               </div>
             </div>
-            {(filterDateFrom || filterDateTo || filterEmployee !== 'all' || filterEmployeeStatus !== 'all') && (
+            {(filterDateFrom || filterDateTo || filterEmployee !== 'all' || filterEmployeeStatus !== 'all' || filterCompanyId) && (
               <button
                 onClick={() => {
                   setFilterDateFrom('')
                   setFilterDateTo('')
                   setFilterEmployee('all')
                   setFilterEmployeeStatus('all')
+                  setFilterCompanyId('')
                 }}
                 className="mt-3 text-sm text-[#065C5C] hover:text-[#004C4C] flex items-center space-x-1"
               >
@@ -743,6 +809,7 @@ export default function NovedadesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empleado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creado por</th>
@@ -752,7 +819,7 @@ export default function NovedadesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredNovelties.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     {novelties.length === 0 ? 'No hay novedades registradas' : 'No se encontraron novedades con los filtros aplicados'}
                   </td>
                 </tr>
@@ -765,6 +832,9 @@ export default function NovedadesPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{novelty.employee_name}</div>
                       <div className="text-xs text-gray-500">ID: {novelty.employee_id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {novelty.empresa_name || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeColor(novelty.type)}`}>
@@ -821,6 +891,10 @@ export default function NovedadesPage() {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Empleado</label>
                   <p className="text-sm font-medium text-gray-900">{selectedNovelty.employee_name}</p>
                   <p className="text-xs text-gray-500">ID: {selectedNovelty.employee_id}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Empresa</label>
+                  <p className="text-sm text-gray-900">{selectedNovelty.empresa_name || 'Sin empresa asignada'}</p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
