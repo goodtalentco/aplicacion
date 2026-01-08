@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Search, Filter, Eye, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Bell, Search, Filter, Eye, ChevronDown, ChevronUp, X, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { usePermissions } from '@/lib/usePermissions'
 import { formatDateColombia } from '@/utils/dateUtils'
@@ -599,6 +599,120 @@ export default function NovedadesPage() {
     setShowDetailModal(true)
   }
 
+  // Función helper para formatear fecha en formato CSV (DD/MM/YYYY)
+  const formatDateForCSV = (dateString?: string | null): string => {
+    if (!dateString) return ''
+    
+    try {
+      let date: Date
+      
+      // Si ya tiene timestamp (viene de la DB), usar directamente
+      if (dateString.includes('T') || dateString.includes(' ')) {
+        date = new Date(dateString)
+      } else {
+        // Si es solo fecha (YYYY-MM-DD), agregar offset de Colombia
+        date = new Date(dateString + 'T00:00:00-05:00')
+      }
+      
+      // Verificar que la fecha es válida
+      if (isNaN(date.getTime())) {
+        return ''
+      }
+      
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      
+      return `${day}/${month}/${year}`
+    } catch (error) {
+      console.error('Error formateando fecha para CSV:', error)
+      return ''
+    }
+  }
+
+  // Función helper para escapar valores CSV
+  const escapeCSVValue = (value: string | null | undefined): string => {
+    if (value === null || value === undefined) return ''
+    
+    const str = String(value)
+    
+    // Si contiene comillas, saltos de línea o comas, envolver en comillas y escapar comillas dobles
+    if (str.includes('"') || str.includes('\n') || str.includes(',') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`
+    }
+    
+    return str
+  }
+
+  // Función para descargar CSV
+  const handleDownloadCSV = () => {
+    if (filteredNovelties.length === 0) return
+
+    // Definir columnas del CSV
+    const headers = [
+      'Fecha de Aplicación',
+      'Fecha de Registro',
+      'Empleado',
+      'ID Empleado',
+      'Empresa',
+      'Tipo de Novedad',
+      'Título',
+      'Descripción',
+      'Observaciones',
+      'Motivo',
+      'Creado por',
+      'Estado Empleado'
+    ]
+
+    // Crear filas de datos
+    const rows = filteredNovelties.map(novelty => [
+      formatDateForCSV(novelty.fecha_aplicacion),
+      formatDateForCSV(novelty.created_at),
+      escapeCSVValue(novelty.employee_name),
+      escapeCSVValue(novelty.employee_id),
+      escapeCSVValue(novelty.empresa_name || ''),
+      escapeCSVValue(novelty.type_label),
+      escapeCSVValue(novelty.title),
+      escapeCSVValue(novelty.description),
+      escapeCSVValue(novelty.details.observacion || ''),
+      escapeCSVValue(novelty.details.motivo || ''),
+      escapeCSVValue(novelty.created_by_email),
+      escapeCSVValue(novelty.is_active ? 'Activo' : 'Inactivo')
+    ])
+
+    // Combinar headers y rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n')
+
+    // Añadir BOM para UTF-8 (permite que Excel abra correctamente caracteres especiales)
+    const BOM = '\uFEFF'
+    const csvWithBOM = BOM + csvContent
+
+    // Crear blob y descargar
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    // Generar nombre de archivo con fecha actual
+    const today = new Date()
+    const day = today.getDate().toString().padStart(2, '0')
+    const month = (today.getMonth() + 1).toString().padStart(2, '0')
+    const year = today.getFullYear()
+    const fileName = `novedades_${day}-${month}-${year}.csv`
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', fileName)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // Limpiar URL object
+    URL.revokeObjectURL(url)
+  }
+
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
       datos_personales: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -796,9 +910,19 @@ export default function NovedadesPage() {
         )}
       </div>
 
-      {/* Results Count */}
-      <div className="text-sm text-gray-600">
-        Mostrando {filteredNovelties.length} de {novelties.length} novedades
+      {/* Results Count and Download Button */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="text-sm text-gray-600">
+          Mostrando {filteredNovelties.length} de {novelties.length} novedades
+        </div>
+        <button
+          onClick={handleDownloadCSV}
+          disabled={filteredNovelties.length === 0}
+          className="flex items-center space-x-2 px-4 py-2 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+        >
+          <Download className="h-4 w-4" />
+          <span>Descargar CSV</span>
+        </button>
       </div>
 
       {/* Table */}
