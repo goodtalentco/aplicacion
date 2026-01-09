@@ -283,6 +283,9 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `auxilio_transporte` | NUMERIC(14,2) | Auxilio de transporte mensual | `140606.00` |
 | `tiene_condicion_medica` | BOOLEAN | Indica si tiene condición médica especial | `false` |
 | `condicion_medica_detalle` | TEXT | Descripción de la condición médica | `NULL` |
+| `fuero` | BOOLEAN | Indica si el empleado tiene fuero sindical o de otro tipo (opcional, default: false) | `false` |
+| `fuero_detalle` | TEXT | Detalle del tipo de fuero si está marcado (opcional) | `NULL` |
+| `pensionado` | BOOLEAN | Indica si el empleado está pensionado (opcional, default: false) | `false` |
 | `beneficiario_hijo` | INTEGER | Número de hijos beneficiarios | `2` |
 | `beneficiario_madre` | INTEGER | Madre beneficiaria (0/1) | `1` |
 | `beneficiario_padre` | INTEGER | Padre beneficiario (0/1) | `0` |
