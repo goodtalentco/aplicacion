@@ -114,7 +114,7 @@ BEGIN
   
   RETURN config;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ===============================================
 -- 4. RLS (Row Level Security)

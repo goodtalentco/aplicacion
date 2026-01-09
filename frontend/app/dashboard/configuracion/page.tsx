@@ -106,30 +106,49 @@ export default function ConfiguracionPage() {
         .single()
 
       if (error) {
-        // Si no existe, crear configuración por defecto
+        // Si no existe, intentar crear usando RPC (bypass RLS)
         if (error.code === 'PGRST116') {
-          const { data: newConfig, error: createError } = await supabase
-            .from('daily_contracts_summary_config')
-            .insert({
-              recipient_emails: [],
-              send_time: '08:00',
-              send_days_of_week: [1, 2, 3, 4, 5],
-              is_enabled: false
-            })
-            .select()
-            .single()
-
-          if (createError) {
-            throw createError
+          console.log('Configuración no existe, intentando crear usando RPC...')
+          
+          try {
+            const { data: newConfig, error: rpcError } = await supabase.rpc('ensure_daily_contracts_summary_config')
+            
+            if (rpcError) {
+              console.error('Error creando configuración vía RPC:', rpcError)
+              showNotification(
+                'Error',
+                `No se pudo crear la configuración: ${rpcError.message || 'Error desconocido'}. Verifica que la migración se haya ejecutado correctamente.`,
+                'error'
+              )
+              return
+            }
+            
+            if (newConfig) {
+              setConfig(newConfig)
+              setRecipientEmails(newConfig.recipient_emails || [])
+              setSendTime(newConfig.send_time || '08:00')
+              setSendDays(newConfig.send_days_of_week || [1, 2, 3, 4, 5])
+              setIsEnabled(newConfig.is_enabled || false)
+              return
+            }
+          } catch (rpcErr: any) {
+            console.error('Excepción en RPC:', rpcErr)
+            showNotification(
+              'Error',
+              `Error al crear configuración: ${rpcErr.message || 'Error desconocido'}`,
+              'error'
+            )
+            return
           }
-
-          setConfig(newConfig)
-          setRecipientEmails(newConfig.recipient_emails || [])
-          setSendTime(newConfig.send_time || '08:00')
-          setSendDays(newConfig.send_days_of_week || [1, 2, 3, 4, 5])
-          setIsEnabled(newConfig.is_enabled || false)
         } else {
-          throw error
+          // Otro tipo de error (probablemente permisos)
+          console.error('Error cargando configuración:', error)
+          showNotification(
+            'Error',
+            `Error al cargar la configuración: ${error.message || 'Verifica que tengas los permisos necesarios (user_permissions.view)'}`,
+            'error'
+          )
+          return
         }
       } else {
         setConfig(data)
@@ -218,6 +237,38 @@ export default function ConfiguracionPage() {
       setSaving(true)
 
       if (!config) {
+        // Intentar crear configuración usando RPC
+        try {
+          const { data: newConfig, error: rpcError } = await supabase.rpc('ensure_daily_contracts_summary_config')
+          
+          if (rpcError) {
+            console.error('Error creating config via RPC:', rpcError)
+            showNotification(
+              'Error',
+              `No se encontró configuración y no se pudo crear: ${rpcError.message}`,
+              'error'
+            )
+            return
+          }
+          
+          if (newConfig) {
+            setConfig(newConfig)
+            setRecipientEmails(newConfig.recipient_emails || [])
+            setSendTime(newConfig.send_time || '08:00')
+            setSendDays(newConfig.send_days_of_week || [1, 2, 3, 4, 5])
+            setIsEnabled(newConfig.is_enabled || false)
+            return
+          }
+        } catch (rpcErr: any) {
+          console.error('Error in RPC call:', rpcErr)
+          showNotification(
+            'Error',
+            `Error al crear configuración: ${rpcErr.message || 'Error desconocido'}`,
+            'error'
+          )
+          return
+        }
+        
         showNotification('Error', 'No se encontró configuración. Por favor, recarga la página.', 'error')
         return
       }
