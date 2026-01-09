@@ -1,5 +1,5 @@
 # 📊 Schema de Base de Datos - GOOD Talent
-## Estado: CONSOLIDADO v4.2 - SISTEMA COMPLETO CON PERÍODOS DE CONTRATOS FIJOS
+## Estado: CONSOLIDADO v4.3 - SISTEMA COMPLETO CON CONFIGURACIÓN DE RESÚMENES DIARIOS
 *Última actualización: 2025-01-22*
 
 > **🚀 SISTEMA COMPLETO:** Schema consolidado con sistema de novedades laborales implementado.
@@ -887,9 +887,53 @@ SELECT * FROM get_parametro_anual('auxilio_transporte');
 
 ---
 
+## ⚙️ Sistema de Configuración
+
+### 15. `daily_contracts_summary_config` – Configuración de Resúmenes Diarios
+
+**Propósito:** Configuración para el sistema de resúmenes diarios por email de contrataciones pendientes.
+
+| Columna | Tipo | Descripción | Ejemplo |
+|---------|------|-------------|---------|
+| `id` | UUID (PK) | Identificador único | `config-uuid-123` |
+| `recipient_emails` | JSONB | Array de emails destinatarios | `["email1@example.com", "email2@example.com"]` |
+| `send_time` | TEXT | Hora de envío (HH:MM, hora Colombia) | `"08:00"` |
+| `send_days_of_week` | JSONB | Días de la semana (0=domingo, 1=lunes, ..., 6=sábado) | `[1,2,3,4,5]` |
+| `is_enabled` | BOOLEAN | Si el envío automático está activado | `true` |
+| `last_sent_at` | TIMESTAMPTZ | Último envío exitoso | `2025-01-22 08:00:00` |
+| `last_executed_at` | TIMESTAMPTZ | Última ejecución (exitosa o fallida) | `2025-01-22 08:00:00` |
+| `last_error` | TEXT | Último error si hubo fallo | `NULL` o `"Error al conectar con Resend"` |
+| `created_at` | TIMESTAMPTZ | Fecha de creación | `2025-01-22 10:00:00` |
+| `updated_at` | TIMESTAMPTZ | Fecha de última actualización | `2025-01-22 14:30:00` |
+| `created_by` | UUID (FK) | Usuario que creó el registro | `user-uuid` |
+| `updated_by` | UUID (FK) | Usuario que actualizó el registro | `user-uuid` |
+
+**Restricciones:**
+- `UNIQUE INDEX ON (1)` - Solo una configuración puede existir
+- `send_time` debe seguir formato HH:MM (regex: `^([0-1][0-9]|2[0-3]):[0-5][0-9]$`)
+- `recipient_emails` debe ser un array JSON
+- `send_days_of_week` debe ser un array JSON
+- Si `is_enabled = true`, entonces `recipient_emails` y `send_days_of_week` no pueden estar vacíos
+
+**Funciones Helper:**
+- `get_daily_contracts_summary_config()` - Obtiene la configuración (siempre hay una sola)
+- `ensure_daily_contracts_summary_config()` - Crea configuración por defecto si no existe
+
+**Seguridad RLS:**
+- **Ver:** Usuarios con permiso `user_permissions.view` o super admins
+- **Crear:** Usuarios con permiso `user_permissions.create` o super admins
+- **Editar:** Usuarios con permiso `user_permissions.edit` o super admins
+
+**Triggers:**
+- `trigger_daily_contracts_summary_config_updated_at` - Actualiza `updated_at` automáticamente
+
+**Propósito:** Permite configurar el sistema de envío automático de resúmenes diarios de contrataciones pendientes por email. El resumen se envía según la programación configurada (horario y días de la semana) y agrupa los contratos pendientes por tipo de tarea (exámenes, ARL, EPS, etc.).
+
+---
+
 ## 🕒 Sistema de Períodos de Contratos Fijos
 
-### 15. `historial_contratos_fijos` – Períodos de Contratos a Término Fijo
+### 16. `historial_contratos_fijos` – Períodos de Contratos a Término Fijo
 
 **Propósito:** Gestión completa del historial de períodos de contratos fijos, incluyendo períodos históricos y prórrogas.
 
