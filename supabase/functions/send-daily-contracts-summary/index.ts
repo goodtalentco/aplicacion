@@ -5,6 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface Contract {
   id: string
@@ -74,7 +75,7 @@ serve(async (req: Request) => {
     }
 
     // Variables de entorno
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_URL_INTERNAL') || ''
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const resendApiKey = Deno.env.get('RESEND_API_KEY') || ''
 
@@ -86,25 +87,26 @@ serve(async (req: Request) => {
       throw new Error('RESEND_API_KEY no configurada')
     }
 
+    // Crear cliente de Supabase con Service Role Key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
     // Obtener configuración
     console.log('📋 Obteniendo configuración...')
-    const configResponse = await fetch(
-      `${supabaseUrl}/rest/v1/daily_contracts_summary_config?select=*`,
-      {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    const { data: configs, error: configError } = await supabase
+      .from('daily_contracts_summary_config')
+      .select('*')
+      .limit(1)
 
-    if (!configResponse.ok) {
-      throw new Error(`Error obteniendo configuración: ${configResponse.statusText}`)
+    if (configError) {
+      throw new Error(`Error obteniendo configuración: ${configError.message}`)
     }
 
-    const configs = await configResponse.json()
-    const config = configs[0]
+    const config = configs?.[0]
 
     if (!config) {
       throw new Error('No se encontró configuración. Por favor, configúrala en el panel de administración.')
@@ -144,43 +146,28 @@ serve(async (req: Request) => {
 
     // Obtener contratos con pendientes
     console.log('📊 Obteniendo contratos con pendientes...')
-    const contractsResponse = await fetch(
-      `${supabaseUrl}/rest/v1/contracts?select=id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,numero_identificacion,empresa_final_id,programacion_cita_examenes,examenes,examenes_fecha,solicitud_inscripcion_arl,arl_nombre,arl_fecha_confirmacion,envio_contrato,recibido_contrato_firmado,contrato_fecha_confirmacion,solicitud_eps,radicado_eps,eps_fecha_confirmacion,envio_inscripcion_caja,radicado_ccf,caja_fecha_confirmacion,solicitud_cesantias,fondo_cesantias,cesantias_fecha_confirmacion,solicitud_fondo_pension,fondo_pension,pension_fecha_confirmacion&archived_at=is.null`,
-      {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
+    const { data: contracts, error: contractsError } = await supabase
+      .from('contracts')
+      .select('id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,numero_identificacion,empresa_final_id,programacion_cita_examenes,examenes,examenes_fecha,solicitud_inscripcion_arl,arl_nombre,arl_fecha_confirmacion,envio_contrato,recibido_contrato_firmado,contrato_fecha_confirmacion,solicitud_eps,radicado_eps,eps_fecha_confirmacion,envio_inscripcion_caja,radicado_ccf,caja_fecha_confirmacion,solicitud_cesantias,fondo_cesantias,cesantias_fecha_confirmacion,solicitud_fondo_pension,fondo_pension,pension_fecha_confirmacion')
+      .is('archived_at', null)
 
-    if (!contractsResponse.ok) {
-      throw new Error(`Error obteniendo contratos: ${contractsResponse.statusText}`)
+    if (contractsError) {
+      throw new Error(`Error obteniendo contratos: ${contractsError.message}`)
     }
 
-    const contracts: Contract[] = await contractsResponse.json()
-
     // Obtener empresas relacionadas
-    const companyIds = Array.from(new Set(contracts.map(c => c.empresa_final_id).filter(Boolean))) as string[]
+    const companyIds = Array.from(new Set((contracts || []).map(c => c.empresa_final_id).filter(Boolean))) as string[]
     const companiesMap: Record<string, { name: string }> = {}
     
     if (companyIds.length > 0) {
-      // Construir query con múltiples OR (más compatible que IN con muchos IDs)
-      // Para simplificar, obtenemos todas las empresas activas si hay muchas
-      const companiesResponse = await fetch(
-        `${supabaseUrl}/rest/v1/companies?select=id,name&archived_at=is.null`,
-        {
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      )
+      const { data: allCompanies, error: companiesError } = await supabase
+        .from('companies')
+        .select('id,name')
+        .is('archived_at', null)
       
-      if (companiesResponse.ok) {
-        const allCompanies: Array<{ id: string, name: string }> = await companiesResponse.json()
+      if (companiesError) {
+        console.error('Error obteniendo empresas:', companiesError)
+      } else if (allCompanies) {
         allCompanies.forEach(company => {
           if (companyIds.includes(company.id)) {
             companiesMap[company.id] = { name: company.name }
@@ -448,22 +435,13 @@ serve(async (req: Request) => {
       console.log('✅ No hay contrataciones pendientes')
       
       // Actualizar last_executed_at
-      await fetch(
-        `${supabaseUrl}/rest/v1/daily_contracts_summary_config?id=eq.${config.id}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            last_executed_at: new Date().toISOString(),
-            last_error: null
-          })
-        }
-      )
+      await supabase
+        .from('daily_contracts_summary_config')
+        .update({
+          last_executed_at: new Date().toISOString(),
+          last_error: null
+        })
+        .eq('id', config.id)
 
       return new Response(
         JSON.stringify({ success: true, message: 'No hay contrataciones pendientes' }),
@@ -506,23 +484,14 @@ serve(async (req: Request) => {
     console.log('✅ Email enviado exitosamente:', resendResult.id)
 
     // Actualizar configuración con último envío
-    await fetch(
-      `${supabaseUrl}/rest/v1/daily_contracts_summary_config?id=eq.${config.id}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          last_sent_at: new Date().toISOString(),
-          last_executed_at: new Date().toISOString(),
-          last_error: null
-        })
-      }
-    )
+    await supabase
+      .from('daily_contracts_summary_config')
+      .update({
+        last_sent_at: new Date().toISOString(),
+        last_executed_at: new Date().toISOString(),
+        last_error: null
+      })
+      .eq('id', config.id)
 
     return new Response(
       JSON.stringify({ 
@@ -540,41 +509,30 @@ serve(async (req: Request) => {
     
     // Intentar actualizar last_error (no crítico si falla)
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_URL_INTERNAL') || ''
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
       
       if (supabaseUrl && supabaseServiceKey) {
-        const configResponse = await fetch(
-          `${supabaseUrl}/rest/v1/daily_contracts_summary_config?select=id&limit=1`,
-          {
-            headers: {
-              'apikey': supabaseServiceKey,
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json'
-            }
+        const errorSupabase = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
           }
-        )
+        })
         
-        if (configResponse.ok) {
-          const configs = await configResponse.json()
-          if (configs[0]) {
-            await fetch(
-              `${supabaseUrl}/rest/v1/daily_contracts_summary_config?id=eq.${configs[0].id}`,
-              {
-                method: 'PATCH',
-                headers: {
-                  'apikey': supabaseServiceKey,
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({
-                  last_executed_at: new Date().toISOString(),
-                  last_error: error.message || 'Error desconocido'
-                })
-              }
-            )
-          }
+        const { data: configs } = await errorSupabase
+          .from('daily_contracts_summary_config')
+          .select('id')
+          .limit(1)
+        
+        if (configs && configs[0]) {
+          await errorSupabase
+            .from('daily_contracts_summary_config')
+            .update({
+              last_executed_at: new Date().toISOString(),
+              last_error: error.message || 'Error desconocido'
+            })
+            .eq('id', configs[0].id)
         }
       }
     } catch (updateError) {

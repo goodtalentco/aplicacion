@@ -315,7 +315,15 @@ export default function ConfiguracionPage() {
       })
 
       if (error) {
-        throw new Error(error.message || 'Error al enviar el resumen')
+        console.error('Error from Edge Function:', error)
+        // Si hay un error en data.error, usar ese mensaje también
+        const errorMessage = error.message || data?.error || 'Error al enviar el resumen'
+        throw new Error(errorMessage)
+      }
+
+      // Verificar si data contiene un error (aunque no haya error en la respuesta)
+      if (data && !data.success && data.error) {
+        throw new Error(data.error)
       }
 
       // Recargar configuración para obtener last_sent_at actualizado
@@ -328,9 +336,10 @@ export default function ConfiguracionPage() {
       )
     } catch (error: any) {
       console.error('Error sending manual summary:', error)
+      const errorMessage = error.message || 'Error al enviar el resumen. Revisa los logs de la Edge Function en Supabase Dashboard para más detalles.'
       showNotification(
         'Error',
-        error.message || 'Error al enviar el resumen. Por favor, intenta de nuevo.',
+        errorMessage,
         'error'
       )
     } finally {
