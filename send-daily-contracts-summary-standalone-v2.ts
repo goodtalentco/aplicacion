@@ -83,12 +83,20 @@ serve(async (req: Request) => {
     }
 
     // Variables de entorno
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+    // En Supabase Edge Functions, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY están disponibles automáticamente
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_URL_INTERNAL') || ''
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     const resendApiKey = Deno.env.get('RESEND_API_KEY') || ''
 
+    // Debug: Log de variables (sin mostrar valores completos por seguridad)
+    console.log('🔐 Variables de entorno:', {
+      supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'NO CONFIGURADA',
+      supabaseServiceKey: supabaseServiceKey ? `${supabaseServiceKey.substring(0, 20)}...` : 'NO CONFIGURADA',
+      resendApiKey: resendApiKey ? `${resendApiKey.substring(0, 10)}...` : 'NO CONFIGURADA'
+    })
+
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Variables de entorno de Supabase no configuradas')
+      throw new Error(`Variables de entorno de Supabase no configuradas. URL: ${supabaseUrl ? 'OK' : 'FALTA'}, Service Key: ${supabaseServiceKey ? 'OK' : 'FALTA'}`)
     }
 
     if (!resendApiKey) {
