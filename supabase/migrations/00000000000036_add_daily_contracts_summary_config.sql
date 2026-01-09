@@ -117,7 +117,18 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ===============================================
--- 4. RLS (Row Level Security)
+-- 4. GRANTS PARA ROL AUTHENTICATED
+-- ===============================================
+
+-- Grants para la tabla
+GRANT SELECT, INSERT, UPDATE ON daily_contracts_summary_config TO authenticated;
+
+-- Grants para las funciones
+GRANT EXECUTE ON FUNCTION get_daily_contracts_summary_config() TO authenticated;
+GRANT EXECUTE ON FUNCTION ensure_daily_contracts_summary_config() TO authenticated;
+
+-- ===============================================
+-- 5. RLS (Row Level Security)
 -- ===============================================
 
 ALTER TABLE daily_contracts_summary_config ENABLE ROW LEVEL SECURITY;
@@ -149,7 +160,7 @@ CREATE POLICY "insert_daily_contracts_summary_config" ON daily_contracts_summary
   );
 
 -- ===============================================
--- 5. INICIALIZAR CONFIGURACIÓN POR DEFECTO (si no existe)
+-- 6. INICIALIZAR CONFIGURACIÓN POR DEFECTO (si no existe)
 -- ===============================================
 
 -- Ejecutar función para crear configuración inicial
