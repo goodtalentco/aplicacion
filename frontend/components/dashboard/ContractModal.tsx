@@ -70,8 +70,17 @@ export default function ContractModal({
   })
   
   // Permisos
-  const { hasPermission } = usePermissions()
+  const { hasPermission, permissions } = usePermissions()
   const canEditResponsable = hasPermission('contracts', 'admin')
+  
+  // Debug: verificar permisos (temporal)
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 Permisos del usuario:', permissions)
+      console.log('🔍 Tiene permiso contracts.admin?', canEditResponsable)
+      console.log('🔍 Permisos de contracts:', permissions.filter(p => p.table_name === 'contracts'))
+    }
+  }, [isOpen, permissions, canEditResponsable])
   
   // Lógica de estados del contrato
   const statusConfig = contract ? getContractStatusConfig(contract) : null

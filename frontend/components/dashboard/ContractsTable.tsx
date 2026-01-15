@@ -38,6 +38,7 @@ import NovedadButton from './NovedadButton'
 import { ContractRowWithCurrentData } from './ContractRowWithCurrentData'
 import { ContractAfiliacionesSection } from './ContractAfiliacionesSection'
 import ContractHistoryModal from './ContractHistoryModal'
+import UserSelector from '../ui/UserSelector'
 
 // Componente especializado para mostrar información de contratos fijos
 interface ContractFixedTermViewProps {
@@ -192,6 +193,8 @@ interface ContractsTableProps {
   onUpdate: () => void
   canUpdate: boolean
   canDelete: boolean
+  canEditResponsable?: boolean // Permiso para editar responsable
+  users?: Array<{id: string, email: string, alias?: string, display_name?: string | null}> // Lista de usuarios para selector
   onApprove?: (contract: Contract) => void
   refreshTrigger?: number
   showOnboarding?: boolean // Si es false, oculta columnas de onboarding
@@ -223,6 +226,8 @@ export default function ContractsTable({
   onUpdate,
   canUpdate,
   canDelete,
+  canEditResponsable = false,
+  users = [],
   onApprove,
   refreshTrigger = 0,
   showOnboarding = true // Por defecto mostrar onboarding para mantener compatibilidad
@@ -1023,14 +1028,55 @@ export default function ContractsTable({
 
                     {/* Responsable de Contratación */}
                     <div className="text-sm">
-                      <div className="font-medium text-gray-800">
-                        {contract.responsable_contratacion_handle || contract.responsable_contratacion_id 
-                          ? (contract.responsable_contratacion_handle || 'Usuario')
-                          : 'Sin asignar'}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Responsable
-                      </div>
+                      {canEditResponsable && showOnboarding ? (
+                        <div>
+                          <UserSelector
+                            selectedUserId={contract.responsable_contratacion_id || null}
+                            onSelect={async (userId) => {
+                              if (!contract.id) return
+                              
+                              setLoadingInline(prev => new Set(prev).add(contract.id!))
+                              try {
+                                const { error } = await supabase
+                                  .from('contracts')
+                                  .update({ responsable_contratacion_id: userId || null })
+                                  .eq('id', contract.id)
+                                
+                                if (error) throw error
+                                
+                                onUpdate()
+                              } catch (error: any) {
+                                console.error('Error actualizando responsable:', error)
+                                alert('Error al actualizar responsable: ' + (error.message || 'Error desconocido'))
+                              } finally {
+                                setLoadingInline(prev => {
+                                  const next = new Set(prev)
+                                  next.delete(contract.id!)
+                                  return next
+                                })
+                              }
+                            }}
+                            placeholder="Sin asignar"
+                            disabled={loadingInline.has(contract.id!)}
+                            users={users}
+                            className="text-sm"
+                          />
+                          <div className="text-xs text-gray-500 mt-1">
+                            Responsable
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="font-medium text-gray-800">
+                            {contract.responsable_contratacion_handle || contract.responsable_contratacion_id 
+                              ? (contract.responsable_contratacion_handle || 'Usuario')
+                              : 'Sin asignar'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Responsable
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Todos los campos de onboarding (12 campos) */}

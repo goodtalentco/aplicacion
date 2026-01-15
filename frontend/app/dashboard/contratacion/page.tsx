@@ -44,6 +44,7 @@ export default function ContratacionPage() {
   const canCreate = hasPermission('contracts', 'create')
   const canUpdate = hasPermission('contracts', 'edit')
   const canDelete = hasPermission('contracts', 'delete')
+  const canEditResponsable = hasPermission('contracts', 'admin')
 
   // Cargar empresas para el dropdown de filtros
   const loadCompanies = async () => {
@@ -597,6 +598,8 @@ export default function ContratacionPage() {
           }}
           canUpdate={canUpdate}
           canDelete={canDelete}
+          canEditResponsable={canEditResponsable}
+          users={users}
           onApprove={(contract) => {
             localStorage.removeItem('contracts_contratacion_cache')
             localStorage.removeItem('contracts_cache_v3')

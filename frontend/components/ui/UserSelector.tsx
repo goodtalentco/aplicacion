@@ -23,6 +23,8 @@ interface UserSelectorProps {
   disabled?: boolean
   error?: boolean
   label?: string
+  users?: User[] // Lista opcional de usuarios (si no se proporciona, se cargan automáticamente)
+  className?: string
 }
 
 export default function UserSelector({
