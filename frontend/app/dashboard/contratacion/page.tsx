@@ -546,11 +546,31 @@ export default function ContratacionPage() {
       const matchesCompany = filterCompanyId === '' || contract.empresa_final_id === filterCompanyId
 
       const matchesOnboarding = (() => {
-        if (filterOnboarding === 'all') return true
-        const progress = contract.contracts_onboarding_progress || 0
-        if (filterOnboarding === 'iniciado') return progress > 0 && progress < 100
-        if (filterOnboarding === 'completo') return progress === 100
-        return progress === 0
+        switch (filterOnboarding) {
+          case 'all':
+            return true
+          
+          case 'sin_arl':
+            return !(contract.arl_nombre && contract.arl_fecha_confirmacion)
+          case 'sin_eps':
+            return !contract.eps_fecha_confirmacion
+          
+          case 'sin_programacion_cita':
+            return !contract.programacion_cita_examenes
+          case 'sin_solicitud_arl':
+            return !contract.solicitud_inscripcion_arl
+          case 'sin_envio_contrato':
+            return !contract.envio_contrato
+          case 'sin_solicitud_eps':
+            return !contract.solicitud_eps
+          case 'sin_caja':
+            return !contract.caja_fecha_confirmacion
+          case 'sin_radicados':
+            return !contract.radicado_eps && !contract.radicado_ccf
+          
+          default:
+            return true
+        }
       })()
 
       const matchesResponsable = filterResponsable === 'all' || contract.responsable_contratacion_id === filterResponsable
