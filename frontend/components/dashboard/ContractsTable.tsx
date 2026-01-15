@@ -281,7 +281,8 @@ export default function ContractsTable({
       '130px', // Contrato
       '110px', // F. Ingreso
       '110px', // F. Terminación
-      '130px'  // Total Remuneración
+      '130px', // Total Remuneración
+      '150px'  // Responsable
     ]
     
     if (!showOnboarding) {
@@ -304,12 +305,12 @@ export default function ContractsTable({
   // Calcular ancho mínimo dinámicamente
   const calculateMinWidth = () => {
     if (!showOnboarding) {
-      const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 // Columnas base: 920px
-      const gaps = 7 * 8 // 8px gap entre columnas
+      const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 + 150 // Columnas base: 1070px
+      const gaps = 8 * 8 // 8px gap entre columnas
       return baseWidth + gaps + 50 // +50px margen de seguridad
     }
     
-    const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 + 90 // Columnas fijas: 1010px
+    const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 + 150 + 90 // Columnas fijas: 1160px
     const onboardingWidth = onboardingFields.length * 85 // Columnas dinámicas
     const gaps = (7 + onboardingFields.length) * 8 // 8px gap entre columnas
     return baseWidth + onboardingWidth + gaps + 50 // +50px margen de seguridad
@@ -764,6 +765,7 @@ export default function ContractsTable({
             <div>F. Ingreso</div>
             <div>F. Terminación</div>
             <div>Total Remuneración</div>
+            <div>Responsable</div>
             
             {/* Todos los campos de onboarding (12 campos) con labels escritos */}
             {showOnboarding && onboardingFields.map(field => (
@@ -1016,6 +1018,18 @@ export default function ContractsTable({
                       </div>
                       <div className="text-sm text-gray-500">
                         Total remuneración
+                      </div>
+                    </div>
+
+                    {/* Responsable de Contratación */}
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-800">
+                        {contract.responsable_contratacion_handle || contract.responsable_contratacion_id 
+                          ? (contract.responsable_contratacion_handle || 'Usuario')
+                          : 'Sin asignar'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Responsable
                       </div>
                     </div>
 

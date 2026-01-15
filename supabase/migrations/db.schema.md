@@ -321,6 +321,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `archived_at` | TIMESTAMPTZ | Fecha de anulación/archivado (NULL si está activo) | `NULL` o `2025-01-20 15:30:00` |
 | `archived_by` | UUID (FK) | Usuario que anuló el contrato | `NULL` o `user-uuid` |
 | `motivo_anulacion` | TEXT | Motivo de anulación (obligatorio si está anulado) | `NULL` o `Empleado no se presentó a trabajar` |
+| `responsable_contratacion_id` | UUID (FK) | Usuario responsable del proceso de contratación y onboarding | `NULL` o `user-uuid` |
 | `created_at` | TIMESTAMPTZ | Fecha de creación | `2025-01-15 10:00:00` |
 | `created_by` | UUID (FK) | Usuario que creó el registro | `user-uuid` |
 | `updated_at` | TIMESTAMPTZ | Fecha de última edición | `2025-01-15 14:30:00` |
@@ -332,6 +333,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 - `updated_by` → `auth.users(id)`
 - `approved_by` → `auth.users(id)`
 - `archived_by` → `auth.users(id)`
+- `responsable_contratacion_id` → `auth.users(id)` (ON DELETE SET NULL)
 
 **Restricciones:**
 - `UNIQUE(numero_contrato_helisa)` - Número de contrato único
@@ -361,6 +363,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 - `contracts_created_by_handle(contract)` - Handle del creador
 - `contracts_updated_by_handle(contract)` - Handle del editor
 - `contracts_full_name(contract)` - Nombre completo del empleado
+- `contracts_responsable_contratacion_handle(contract)` - Handle del responsable de contratación
 - `contracts_onboarding_progress(contract)` - Progreso de onboarding (0-100) **SIMPLIFICADO**
 - `get_contract_full_status(contract)` - Estado completo con flags de permisos
 

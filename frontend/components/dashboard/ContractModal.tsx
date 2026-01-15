@@ -9,6 +9,8 @@ import CompanySelector from '../ui/CompanySelector'
 import CitySelector from '../ui/CitySelector'
 import ContractHistorialModal from './ContractHistorialModal'
 import { getDateLimits, validateDateInput } from '../../utils/dateValidation'
+import UserSelector from '../ui/UserSelector'
+import { usePermissions } from '../../lib/usePermissions'
 
 
 
@@ -107,6 +109,7 @@ export default function ContractModal({
   beneficiario_madre: 0,
   beneficiario_padre: 0,
   beneficiario_conyuge: 0,
+    responsable_contratacion_id: null,
     fecha_solicitud: '',
     fecha_radicado: '',
     programacion_cita_examenes: false,
@@ -615,6 +618,7 @@ export default function ContractModal({
           beneficiario_madre: contract.beneficiario_madre || 0,
           beneficiario_padre: contract.beneficiario_padre || 0,
           beneficiario_conyuge: contract.beneficiario_conyuge || 0,
+          responsable_contratacion_id: contract.responsable_contratacion_id || null,
           fecha_solicitud: contract.fecha_solicitud || '',
           fecha_radicado: contract.fecha_radicado || '',
           programacion_cita_examenes: contract.programacion_cita_examenes || false,
@@ -1819,7 +1823,21 @@ export default function ContractModal({
                     />
                   </div>
 
-
+                  {/* Responsable de Contratación */}
+                  <div className="col-span-1 lg:col-span-2">
+                    <UserSelector
+                      selectedUserId={formData.responsable_contratacion_id || null}
+                      onSelect={(userId) => handleInputChange('responsable_contratacion_id', userId)}
+                      placeholder="Seleccionar responsable de contratación..."
+                      disabled={isReadOnly || !canEditResponsable}
+                      label="Responsable de Contratación"
+                    />
+                    {!canEditResponsable && !isReadOnly && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Solo usuarios con permiso de "Administrador de contratos" pueden modificar el responsable
+                      </p>
+                    )}
+                  </div>
 
                   {/* Tipo de Contrato - Fila completa */}
                   <div className="col-span-1 lg:col-span-2">

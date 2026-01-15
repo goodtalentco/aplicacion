@@ -18,10 +18,19 @@ export type FilterOnboarding =
   | 'sin_caja'
   | 'sin_radicados'
 
+export type FilterResponsable = 'all' | string // 'all' o user_id
+
 interface CompanyFilter {
   id: string
   name: string
   tax_id: string
+}
+
+interface UserFilter {
+  id: string
+  email: string
+  alias?: string
+  display_name?: string | null
 }
 
 interface ContractsFiltersProps {
@@ -37,7 +46,10 @@ interface ContractsFiltersProps {
   setFilterCompanyId: (id: string) => void
   filterOnboarding: FilterOnboarding
   setFilterOnboarding: (filter: FilterOnboarding) => void
+  filterResponsable: FilterResponsable
+  setFilterResponsable: (filter: FilterResponsable) => void
   companies: CompanyFilter[]
+  users?: UserFilter[] // Lista de usuarios para filtrar por responsable
   stats: {
     total: number
     good: number
@@ -81,12 +93,18 @@ export default function ContractsFilters({
   setFilterCompanyId,
   filterOnboarding,
   setFilterOnboarding,
+  filterResponsable,
+  setFilterResponsable,
   companies,
+  users = [],
   stats
 }: ContractsFiltersProps) {
   const [companySearchTerm, setCompanySearchTerm] = useState('')
   const [showCompanyDropdown, setShowCompanyDropdown] = useState(false)
   const companyDropdownRef = useRef<HTMLDivElement>(null)
+  const [responsableSearchTerm, setResponsableSearchTerm] = useState('')
+  const [showResponsableDropdown, setShowResponsableDropdown] = useState(false)
+  const responsableDropdownRef = useRef<HTMLDivElement>(null)
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -115,12 +133,14 @@ export default function ContractsFilters({
     setFilterAprobacion('all')
     setFilterVigencia('all')
     setFilterCompanyId('')
+    setFilterResponsable('all')
     setFilterOnboarding('all')
     setCompanySearchTerm('')
+    setResponsableSearchTerm('')
   }
 
   const hasActiveFilters = searchTerm || filterEmpresa !== 'all' || filterAprobacion !== 'all' || 
-                          filterVigencia !== 'all' || filterCompanyId !== '' || filterOnboarding !== 'all'
+                          filterVigencia !== 'all' || filterCompanyId !== '' || filterResponsable !== 'all' || filterOnboarding !== 'all'
 
   return (
     <div className="space-y-4">
@@ -384,6 +404,86 @@ export default function ContractsFilters({
               )}
             </div>
 
+            {/* Filtro por responsable de contratación */}
+            {users.length > 0 && (
+              <div className="relative min-w-[280px]" ref={responsableDropdownRef}>
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={selectedResponsable ? (selectedResponsable.display_name || selectedResponsable.alias || selectedResponsable.email) : responsableSearchTerm}
+                  onChange={(e) => {
+                    setResponsableSearchTerm(e.target.value)
+                    setShowResponsableDropdown(true)
+                    if (selectedResponsable) {
+                      setFilterResponsable('all')
+                    }
+                  }}
+                  onFocus={() => setShowResponsableDropdown(true)}
+                  placeholder="Buscar responsable..."
+                  className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                />
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                
+                {/* Dropdown de responsables */}
+                {showResponsableDropdown && (
+                  <div className="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {/* Opción para limpiar */}
+                    <button
+                      onClick={() => {
+                        setFilterResponsable('all')
+                        setResponsableSearchTerm('')
+                        setShowResponsableDropdown(false)
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 italic">Todos los responsables</span>
+                        {filterResponsable === 'all' && (
+                          <CheckCircle className="h-4 w-4 text-[#004C4C]" />
+                        )}
+                      </div>
+                    </button>
+                    
+                    {/* Lista de responsables filtrados */}
+                    {users
+                      .filter(user => {
+                        const searchLower = responsableSearchTerm.toLowerCase()
+                        const email = user.email.toLowerCase()
+                        const alias = (user.alias || '').toLowerCase()
+                        const displayName = (user.display_name || '').toLowerCase()
+                        return email.includes(searchLower) || alias.includes(searchLower) || displayName.includes(searchLower)
+                      })
+                      .map((user) => {
+                        const displayName = user.display_name || user.alias || user.email
+                        return (
+                          <button
+                            key={user.id}
+                            onClick={() => {
+                              setFilterResponsable(user.id)
+                              setResponsableSearchTerm('')
+                              setShowResponsableDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium text-gray-900">{displayName}</div>
+                                {user.email && user.email !== displayName && (
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                )}
+                              </div>
+                              {filterResponsable === user.id && (
+                                <CheckCircle className="h-4 w-4 text-[#004C4C]" />
+                              )}
+                            </div>
+                          </button>
+                        )
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Filtro avanzado de onboarding */}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -425,6 +525,7 @@ export default function ContractsFilters({
                 filterAprobacion !== 'all' && `estado (${filterAprobacion})`,
                 filterVigencia !== 'all' && `vigencia (${filterVigencia})`,
                 filterCompanyId && `empresa cliente`,
+                filterResponsable !== 'all' && `responsable`,
                 filterOnboarding !== 'all' && `onboarding`
               ].filter(Boolean).join(', ')}
             </span>

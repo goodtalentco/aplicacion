@@ -108,10 +108,14 @@ export interface Contract {
   created_by?: string
   updated_by?: string
   
+  // Responsable de contratación
+  responsable_contratacion_id?: string | null
+  
   // Computed columns
   contracts_created_by_handle?: string | null
   contracts_updated_by_handle?: string | null
   contracts_full_name?: string | null
+  responsable_contratacion_handle?: string | null // Computed: handle del responsable
   contracts_onboarding_progress?: number | null
   
   // Relaciones

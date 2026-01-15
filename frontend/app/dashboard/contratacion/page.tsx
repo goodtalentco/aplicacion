@@ -60,6 +60,37 @@ export default function ContratacionPage() {
     }
   }
 
+  // Cargar usuarios para el filtro de responsables
+  const loadUsers = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_all_user_profiles')
+      
+      if (error) {
+        console.error('Error loading users:', error)
+        return
+      }
+
+      // Filtrar solo usuarios activos y formatear
+      const activeUsers = (data || [])
+        .filter((u: any) => u.is_active !== false)
+        .map((u: any) => ({
+          id: u.user_id,
+          email: u.auth_email || u.notification_email || '',
+          alias: u.alias || null,
+          display_name: u.display_name || null
+        }))
+        .sort((a, b) => {
+          const nameA = a.display_name || a.alias || a.email
+          const nameB = b.display_name || b.alias || b.email
+          return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
+        })
+
+      setUsers(activeUsers)
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }
+
   // Cargar contratos solo cuando los permisos estén listos
   const loadContracts = async () => {
     if (!canRead) {
@@ -174,11 +205,20 @@ export default function ContratacionPage() {
         const completedFields = onboardingFields.filter(Boolean).length
         const onboardingProgress = Math.round((completedFields / 12) * 100)
 
+        // Obtener handle del responsable si existe
+        let responsableHandle = null
+        if (contract.responsable_contratacion_id) {
+          // Intentar obtener desde computed column si está disponible
+          // Si no, se puede obtener desde la función get_user_handle
+          responsableHandle = contract.responsable_contratacion_handle || null
+        }
+
         return {
           ...contract,
           company: companiesMap[contract.empresa_final_id] || null,
           contracts_full_name: fullName,
           contracts_onboarding_progress: onboardingProgress,
+          responsable_contratacion_handle: responsableHandle,
           contracts_created_by_handle: null,
           contracts_updated_by_handle: null
         }
@@ -222,6 +262,7 @@ export default function ContratacionPage() {
     if (shouldLoad) {
       loadContracts()
       loadCompanies()
+      loadUsers()
     } else if (!permissionsLoading && permissions.length === 0) {
       setLoading(false)
     } else if (dataLoaded) {
@@ -323,7 +364,7 @@ export default function ContratacionPage() {
       }
     })()
 
-    return matchesSearch && matchesEmpresa && matchesAprobacion && matchesVigencia && matchesCompany && matchesOnboarding
+    return matchesSearch && matchesEmpresa && matchesAprobacion && matchesVigencia && matchesCompany && matchesResponsable && matchesOnboarding
   })
 
   // Estadísticas completas para filtros inteligentes
@@ -488,7 +529,10 @@ export default function ContratacionPage() {
         setFilterCompanyId={setFilterCompanyId}
         filterOnboarding={filterOnboarding}
         setFilterOnboarding={setFilterOnboarding}
+        filterResponsable={filterResponsable}
+        setFilterResponsable={setFilterResponsable}
         companies={companies}
+        users={users}
         stats={stats}
       />
 

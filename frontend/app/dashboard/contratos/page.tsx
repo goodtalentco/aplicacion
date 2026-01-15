@@ -181,11 +181,18 @@ export default function ContratosPage() {
         const completedFields = onboardingFields.filter(Boolean).length
         const onboardingProgress = Math.round((completedFields / 12) * 100)
 
+        // Obtener handle del responsable si existe
+        let responsableHandle = null
+        if (contract.responsable_contratacion_id) {
+          responsableHandle = contract.responsable_contratacion_handle || null
+        }
+
         return {
           ...contract,
           company: companiesMap[contract.empresa_final_id] || null,
           contracts_full_name: fullName,
           contracts_onboarding_progress: onboardingProgress,
+          responsable_contratacion_handle: responsableHandle,
           // Handles temporalmente null hasta que las computed columns estén disponibles
           contracts_created_by_handle: null,
           contracts_updated_by_handle: null
