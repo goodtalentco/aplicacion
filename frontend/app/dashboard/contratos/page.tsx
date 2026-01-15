@@ -36,7 +36,7 @@ export default function ContratosPage() {
   const [filterResponsable, setFilterResponsable] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingContract, setEditingContract] = useState<Contract | null>(null)
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'existing_employee'>('create')
   const [toastOpen, setToastOpen] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
   const [toastType, setToastType] = useState<'success'|'error'|'info'>('success')
@@ -399,6 +399,13 @@ export default function ContratosPage() {
     setShowModal(true)
   }
 
+  const handleCreateExistingEmployee = () => {
+    if (!canCreate) return
+    setEditingContract(null)
+    setModalMode('existing_employee')
+    setShowModal(true)
+  }
+
   // Manejar reporte de novedad
   const handleReportNovelty = (contract: Contract) => {
     // Por ahora solo mostrar un toast - aquí se puede integrar con el módulo de novedades futuro
@@ -585,13 +592,24 @@ export default function ContratosPage() {
 
       {/* Floating Action Button móvil */}
       {canCreate && (
-        <button
-          onClick={handleCreateNew}
-          className="lg:hidden fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full shadow-xl text-white bg-gradient-to-br from-[#004C4C] to-[#065C5C] flex items-center justify-center hover:scale-105 transition-transform"
-          aria-label="Nuevo contrato"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
+        <div className="lg:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end space-y-2">
+          <button
+            onClick={handleCreateExistingEmployee}
+            className="h-12 w-12 rounded-full shadow-xl text-white bg-gradient-to-br from-[#0A6A6A] to-[#5FD3D2] flex items-center justify-center hover:scale-105 transition-transform"
+            aria-label="Agregar empleado existente"
+            title="Agregar empleado existente"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+          <button
+            onClick={handleCreateNew}
+            className="h-14 w-14 rounded-full shadow-xl text-white bg-gradient-to-br from-[#004C4C] to-[#065C5C] flex items-center justify-center hover:scale-105 transition-transform"
+            aria-label="Nuevo contrato"
+            title="Nuevo contrato"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </div>
       )}
 
       {/* FAB desktop */}

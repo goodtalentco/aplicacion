@@ -11,6 +11,7 @@ import ContractHistorialModal from './ContractHistorialModal'
 import { getDateLimits, validateDateInput } from '../../utils/dateValidation'
 import UserSelector from '../ui/UserSelector'
 import { usePermissions } from '../../lib/usePermissions'
+import AuxiliaryDropdown from '../ui/AuxiliaryDropdown'
 
 
 
@@ -25,7 +26,7 @@ interface ContractModalProps {
   onClose: () => void
   onSuccess: () => void
   contract?: Contract | null
-  mode: 'create' | 'edit'
+  mode: 'create' | 'edit' | 'existing_employee'
   companies: Company[]
 }
 
@@ -1303,9 +1304,9 @@ export default function ContractModal({
     try {
       // Crear objeto limpio solo con campos que existen en la tabla contracts
       const dataToSave = {
-        // Solo actualizar status_aprobacion en modo creación
+        // Solo actualizar status_aprobacion en modo creación o existing_employee
         // En modo edición, el status solo se cambia mediante el botón de aprobación
-        ...(mode === 'create' ? { status_aprobacion: saveAs } : {}),
+        ...(mode === 'create' || mode === 'existing_employee' ? { status_aprobacion: saveAs } : {}),
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre || null,
         primer_apellido: formData.primer_apellido,
@@ -1374,7 +1375,7 @@ export default function ContractModal({
         radicado_ccf: (typeof formData.radicado_ccf === 'string' && formData.radicado_ccf.trim()) || null,
         observacion: formData.observacion || null,
         // Agregar campos de auditoría
-        ...(mode === 'create' && { created_by: (await supabase.auth.getUser()).data.user?.id }),
+        ...(mode === 'create' || mode === 'existing_employee' ? { created_by: (await supabase.auth.getUser()).data.user?.id } : {}),
         updated_by: (await supabase.auth.getUser()).data.user?.id
       }
 
@@ -1448,7 +1449,7 @@ export default function ContractModal({
           <div className="flex items-center justify-between mb-2">
             <div className="flex-1">
               <h2 className="text-lg font-bold">
-                {mode === 'create' ? 'Nuevo Contrato' : isReadOnly ? 'Ver Contrato' : 'Editar Contrato'}
+                {mode === 'existing_employee' ? 'Agregar Empleado Existente' : mode === 'create' ? 'Nuevo Contrato' : isReadOnly ? 'Ver Contrato' : 'Editar Contrato'}
               </h2>
             </div>
             <button
@@ -2526,6 +2527,163 @@ export default function ContractModal({
                     </div>
                   </div>
                 </div>
+
+                {/* Sección de Afiliaciones para Empleado Existente */}
+                {mode === 'existing_employee' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-3">
+                      📋 Afiliaciones Confirmadas
+                    </h4>
+                    <p className="text-xs text-blue-700 mb-4">
+                      Selecciona las entidades a las que el empleado está afiliado y confirma las fechas de afiliación.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* EPS */}
+                      <div>
+                        <AuxiliaryDropdown
+                          tableName="eps"
+                          selectedValue={formData.radicado_eps || ''}
+                          onSelect={(value) => handleInputChange('radicado_eps', value)}
+                          placeholder="Seleccionar EPS..."
+                          disabled={isReadOnly}
+                          error={!!errors.radicado_eps}
+                          label="EPS *"
+                        />
+                        {errors.radicado_eps && (
+                          <p className="text-red-600 text-xs mt-1">{errors.radicado_eps}</p>
+                        )}
+                        <input
+                          type="date"
+                          {...getDateLimits('past')}
+                          value={formData.eps_fecha_confirmacion || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('eps_fecha_confirmacion', e.target.value)}
+                          onBlur={(e) => {
+                            if (!isReadOnly && e.target.value) {
+                              validateDateInput(e.target.value, 'past', true, true)
+                            }
+                          }}
+                          placeholder="Fecha de confirmación"
+                          className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                          disabled={isReadOnly}
+                        />
+                        <label className="block text-xs text-gray-500 mt-1">Fecha de confirmación EPS *</label>
+                      </div>
+
+                      {/* Fondo de Pensión */}
+                      <div>
+                        <AuxiliaryDropdown
+                          tableName="fondos_pension"
+                          selectedValue={formData.fondo_pension || ''}
+                          onSelect={(value) => handleInputChange('fondo_pension', value)}
+                          placeholder="Seleccionar Fondo de Pensión..."
+                          disabled={isReadOnly}
+                          error={!!errors.fondo_pension}
+                          label="Fondo de Pensión *"
+                        />
+                        {errors.fondo_pension && (
+                          <p className="text-red-600 text-xs mt-1">{errors.fondo_pension}</p>
+                        )}
+                        <input
+                          type="date"
+                          {...getDateLimits('past')}
+                          value={formData.pension_fecha_confirmacion || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('pension_fecha_confirmacion', e.target.value)}
+                          onBlur={(e) => {
+                            if (!isReadOnly && e.target.value) {
+                              validateDateInput(e.target.value, 'past', true, true)
+                            }
+                          }}
+                          placeholder="Fecha de confirmación"
+                          className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                          disabled={isReadOnly}
+                        />
+                        <label className="block text-xs text-gray-500 mt-1">Fecha de confirmación Pensión *</label>
+                      </div>
+
+                      {/* Fondo de Cesantías */}
+                      <div>
+                        <AuxiliaryDropdown
+                          tableName="fondos_cesantias"
+                          selectedValue={formData.fondo_cesantias || ''}
+                          onSelect={(value) => handleInputChange('fondo_cesantias', value)}
+                          placeholder="Seleccionar Fondo de Cesantías..."
+                          disabled={isReadOnly}
+                          error={!!errors.fondo_cesantias}
+                          label="Fondo de Cesantías *"
+                        />
+                        {errors.fondo_cesantias && (
+                          <p className="text-red-600 text-xs mt-1">{errors.fondo_cesantias}</p>
+                        )}
+                        <input
+                          type="date"
+                          {...getDateLimits('past')}
+                          value={formData.cesantias_fecha_confirmacion || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('cesantias_fecha_confirmacion', e.target.value)}
+                          onBlur={(e) => {
+                            if (!isReadOnly && e.target.value) {
+                              validateDateInput(e.target.value, 'past', true, true)
+                            }
+                          }}
+                          placeholder="Fecha de confirmación"
+                          className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                          disabled={isReadOnly}
+                        />
+                        <label className="block text-xs text-gray-500 mt-1">Fecha de confirmación Cesantías *</label>
+                      </div>
+
+                      {/* ARL - Solo mostrar nombre y fecha (se asigna automáticamente según empresa) */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          ARL
+                        </label>
+                        <div className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                          {arlActiva || formData.arl_nombre || 'Se asignará automáticamente según la empresa'}
+                        </div>
+                        <input
+                          type="date"
+                          {...getDateLimits('past')}
+                          value={formData.arl_fecha_confirmacion || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('arl_fecha_confirmacion', e.target.value)}
+                          onBlur={(e) => {
+                            if (!isReadOnly && e.target.value) {
+                              validateDateInput(e.target.value, 'past', true, true)
+                            }
+                          }}
+                          placeholder="Fecha de confirmación"
+                          className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                          disabled={isReadOnly}
+                        />
+                        <label className="block text-xs text-gray-500 mt-1">Fecha de confirmación ARL *</label>
+                      </div>
+
+                      {/* Caja de Compensación - Solo mostrar nombre y fecha (se asigna automáticamente según empresa y ciudad) */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Caja de Compensación
+                        </label>
+                        <div className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                          {cajaCompensacionActiva || formData.radicado_ccf || 'Se asignará automáticamente según la empresa y ciudad'}
+                        </div>
+                        <input
+                          type="date"
+                          {...getDateLimits('past')}
+                          value={formData.caja_fecha_confirmacion || ''}
+                          onChange={(e) => !isReadOnly && handleInputChange('caja_fecha_confirmacion', e.target.value)}
+                          onBlur={(e) => {
+                            if (!isReadOnly && e.target.value) {
+                              validateDateInput(e.target.value, 'past', true, true)
+                            }
+                          }}
+                          placeholder="Fecha de confirmación"
+                          className="w-full px-3 py-2 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+                          disabled={isReadOnly}
+                        />
+                        <label className="block text-xs text-gray-500 mt-1">Fecha de confirmación Caja *</label>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* URL de Dropbox */}
                 <div>
