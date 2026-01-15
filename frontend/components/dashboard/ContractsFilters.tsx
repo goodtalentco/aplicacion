@@ -105,6 +105,11 @@ export default function ContractsFilters({
   const [responsableSearchTerm, setResponsableSearchTerm] = useState('')
   const [showResponsableDropdown, setShowResponsableDropdown] = useState(false)
   const responsableDropdownRef = useRef<HTMLDivElement>(null)
+  
+  // Obtener el responsable seleccionado basado en filterResponsable
+  const selectedResponsable = filterResponsable && filterResponsable !== 'all' && users
+    ? users.find(u => u.id === filterResponsable)
+    : null
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
