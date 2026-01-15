@@ -1,6 +1,6 @@
 /**
  * Página de Configuración
- * Reorganizada con secciones claras para:
+ * Reorganizada con tarjetas estilo tablas auxiliares
  * - Resúmenes Diarios de Contratación
  * - Notificaciones de Vencimiento de Contratos
  */
@@ -27,7 +27,9 @@ import {
   AlertCircle,
   Loader2,
   Bell,
-  FileText
+  FileText,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import NotificationModal from '@/components/dashboard/NotificationModal'
 import { formatDateColombia } from '@/utils/dateUtils'
@@ -82,6 +84,7 @@ export default function ConfiguracionPage() {
   const [dailyIsEnabled, setDailyIsEnabled] = useState(false)
   const [dailySaving, setDailySaving] = useState(false)
   const [dailySending, setDailySending] = useState(false)
+  const [dailyExpanded, setDailyExpanded] = useState(false)
   
   // Estados para Notificaciones de Vencimiento
   const [expirationConfig, setExpirationConfig] = useState<ExpirationNotificationsConfig | null>(null)
@@ -94,6 +97,7 @@ export default function ConfiguracionPage() {
   const [expirationIsEnabled, setExpirationIsEnabled] = useState(false)
   const [expirationSaving, setExpirationSaving] = useState(false)
   const [expirationSending, setExpirationSending] = useState(false)
+  const [expirationExpanded, setExpirationExpanded] = useState(false)
   
   const [loading, setLoading] = useState(true)
   
@@ -537,598 +541,606 @@ export default function ConfiguracionPage() {
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* SECCIÓN 1: Resumen Diario de Contratación */}
-      {/* ============================================ */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <FileText className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Resumen Diario de Contratación
-            </h2>
-            <p className="text-sm text-gray-600">
-              Configuración de resúmenes diarios de contrataciones pendientes
-            </p>
-          </div>
-        </div>
-
-        {/* Emails Destinatarios */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Mail className="h-5 w-5 mr-2 text-[#065C5C]" />
-            Emails Destinatarios
-          </h3>
-
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1">
-              <input
-                type="email"
-                value={dailyNewEmail}
-                onChange={(e) => setDailyNewEmail(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleDailyAddEmail()
-                  }
-                }}
-                placeholder="Ingresa el email destinatario"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <button
-              onClick={handleDailyAddEmail}
-              className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Agregar</span>
-            </button>
-          </div>
-
-          {dailyRecipientEmails.length > 0 ? (
-            <div className="space-y-2">
-              {dailyRecipientEmails.map((email, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+      {/* Grid de tarjetas de configuración */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Tarjeta 1: Resumen Diario de Contratación */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Header con gradiente */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <FileText className="w-8 h-8" />
+                <button
+                  onClick={() => setDailyExpanded(!dailyExpanded)}
+                  className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                 >
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">{email}</span>
-                  </div>
-                  <button
-                    onClick={() => handleDailyRemoveEmail(email)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar email"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-              No hay emails destinatarios configurados
-            </div>
-          )}
-        </div>
-
-        {/* Programación de Envío */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-[#065C5C]" />
-            Programación de Envío
-          </h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hora de Envío (Hora Colombia)
-              </label>
-              <input
-                type="time"
-                value={dailySendTime}
-                onChange={(e) => setDailySendTime(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                La hora se interpreta en zona horaria de Colombia (America/Bogota)
+                  {dailyExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Resumen Diario de Contratación</h3>
+              <p className="text-sm opacity-90 mb-3">
+                Configuración de resúmenes diarios de contrataciones pendientes
               </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Días de la Semana
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                {DAYS_OF_WEEK.map((day) => {
-                  const isSelected = dailySendDays.includes(day.value)
-                  return (
-                    <button
-                      key={day.value}
-                      onClick={() => handleDailyToggleDay(day.value)}
-                      className={`
-                        p-3 rounded-xl border-2 transition-all duration-200 text-center
-                        ${isSelected
-                          ? 'bg-[#065C5C] text-white border-[#065C5C]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#87E0E0]'
-                        }
-                      `}
-                    >
-                      <div className="font-semibold text-sm">{day.short}</div>
-                      <div className="text-xs opacity-75">{day.label}</div>
-                    </button>
-                  )
-                })}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm">{dailyRecipientEmails.length} email{dailyRecipientEmails.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {dailyIsEnabled ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm">Activo</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span className="text-sm">Inactivo</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Activar/Desactivar */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <Power className="h-5 w-5 mr-2 text-[#065C5C]" />
-                Envío Automático
-              </h3>
-              <p className="text-sm text-gray-600">
-                Activa o desactiva el envío automático de resúmenes según la programación configurada
-              </p>
-            </div>
-            <button
-              onClick={() => setDailyIsEnabled(!dailyIsEnabled)}
-              className={`
-                relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#87E0E0] focus:ring-offset-2
-                ${dailyIsEnabled ? 'bg-[#065C5C]' : 'bg-gray-300'}
-              `}
-            >
-              <span
-                className={`
-                  inline-block h-6 w-6 transform rounded-full bg-white transition-transform
-                  ${dailyIsEnabled ? 'translate-x-7' : 'translate-x-1'}
-                `}
-              />
-            </button>
+            {/* Patrón decorativo */}
+            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
           </div>
 
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              {dailyIsEnabled ? (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">
-                    Envío automático activado
-                  </span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-5 w-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600">
-                    Envío automático desactivado
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          {/* Contenido expandible */}
+          {dailyExpanded && (
+            <div className="p-6 space-y-6">
+              {/* Emails Destinatarios */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Mail className="h-5 w-5 mr-2 text-[#065C5C]" />
+                  Emails Destinatarios
+                </h4>
 
-        {/* Estado del Sistema */}
-        {dailyConfig && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2 text-[#065C5C]" />
-              Estado del Sistema
-            </h3>
-
-            <div className="space-y-4">
-              {dailyConfig.last_sent_at && (
-                <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex gap-3 mb-4">
                   <div className="flex-1">
-                    <div className="font-medium text-green-900">Último Envío Exitoso</div>
-                    <div className="text-sm text-green-700 mt-1">
-                      {formatDateColombia(dailyConfig.last_sent_at)}
+                    <input
+                      type="email"
+                      value={dailyNewEmail}
+                      onChange={(e) => setDailyNewEmail(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleDailyAddEmail()
+                        }
+                      }}
+                      placeholder="Ingresa el email destinatario"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+                  <button
+                    onClick={handleDailyAddEmail}
+                    className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Agregar</span>
+                  </button>
+                </div>
+
+                {dailyRecipientEmails.length > 0 ? (
+                  <div className="space-y-2">
+                    {dailyRecipientEmails.map((email, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900">{email}</span>
+                        </div>
+                        <button
+                          onClick={() => handleDailyRemoveEmail(email)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar email"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
+                    No hay emails destinatarios configurados
+                  </div>
+                )}
+              </div>
+
+              {/* Programación de Envío */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Clock className="h-5 w-5 mr-2 text-[#065C5C]" />
+                  Programación de Envío
+                </h4>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Hora de Envío (Hora Colombia)
+                    </label>
+                    <input
+                      type="time"
+                      value={dailySendTime}
+                      onChange={(e) => setDailySendTime(e.target.value)}
+                      className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Días de la Semana
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const isSelected = dailySendDays.includes(day.value)
+                        return (
+                          <button
+                            key={day.value}
+                            onClick={() => handleDailyToggleDay(day.value)}
+                            className={`
+                              p-3 rounded-xl border-2 transition-all duration-200 text-center
+                              ${isSelected
+                                ? 'bg-[#065C5C] text-white border-[#065C5C]'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-[#87E0E0]'
+                              }
+                            `}
+                          >
+                            <div className="font-semibold text-sm">{day.short}</div>
+                            <div className="text-xs opacity-75">{day.label}</div>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {dailyConfig.last_error && (
-                <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="font-medium text-red-900">Último Error</div>
-                    <div className="text-sm text-red-700 mt-1">{dailyConfig.last_error}</div>
-                    {dailyConfig.last_executed_at && (
-                      <div className="text-xs text-red-600 mt-1">
-                        Ocurrió el {formatDateColombia(dailyConfig.last_executed_at)}
+              {/* Activar/Desactivar */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <Power className="h-5 w-5 mr-2 text-[#065C5C]" />
+                      Envío Automático
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Activa o desactiva el envío automático de resúmenes
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setDailyIsEnabled(!dailyIsEnabled)}
+                    className={`
+                      relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#87E0E0] focus:ring-offset-2
+                      ${dailyIsEnabled ? 'bg-[#065C5C]' : 'bg-gray-300'}
+                    `}
+                  >
+                    <span
+                      className={`
+                        inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                        ${dailyIsEnabled ? 'translate-x-7' : 'translate-x-1'}
+                      `}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Estado del Sistema */}
+              {dailyConfig && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2 text-[#065C5C]" />
+                    Estado del Sistema
+                  </h4>
+
+                  <div className="space-y-4">
+                    {dailyConfig.last_sent_at && (
+                      <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-green-900">Último Envío Exitoso</div>
+                          <div className="text-sm text-green-700 mt-1">
+                            {formatDateColombia(dailyConfig.last_sent_at)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {dailyConfig.last_error && (
+                      <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                        <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-red-900">Último Error</div>
+                          <div className="text-sm text-red-700 mt-1">{dailyConfig.last_error}</div>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {!dailyConfig.last_sent_at && !dailyConfig.last_error && (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-                  Aún no se ha ejecutado ningún envío
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Acciones */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button
-            onClick={handleDailySave}
-            disabled={dailySaving}
-            className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {dailySaving ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5" />
-                <span>Guardar Configuración</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleDailySendManual}
-            disabled={dailySending || dailyRecipientEmails.length === 0}
-            className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#87E0E0] text-[#004C4C] rounded-xl hover:bg-[#5FD3D2] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
-          >
-            {dailySending ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Enviando...</span>
-              </>
-            ) : (
-              <>
-                <Send className="h-5 w-5" />
-                <span>Enviar Resumen Manualmente</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================ */}
-      {/* SECCIÓN 2: Notificaciones de Vencimiento */}
-      {/* ============================================ */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-amber-100 rounded-lg">
-            <Bell className="h-6 w-6 text-amber-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Notificaciones de Vencimiento de Contratos
-            </h2>
-            <p className="text-sm text-gray-600">
-              Configuración de notificaciones automáticas para contratos próximos a vencer
-            </p>
-          </div>
-        </div>
-
-        {/* Emails Destinatarios */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Mail className="h-5 w-5 mr-2 text-[#065C5C]" />
-            Emails Destinatarios
-          </h3>
-
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1">
-              <input
-                type="email"
-                value={expirationNewEmail}
-                onChange={(e) => setExpirationNewEmail(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleExpirationAddEmail()
-                  }
-                }}
-                placeholder="Ingresa el email destinatario"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <button
-              onClick={handleExpirationAddEmail}
-              className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Agregar</span>
-            </button>
-          </div>
-
-          {expirationRecipientEmails.length > 0 ? (
-            <div className="space-y-2">
-              {expirationRecipientEmails.map((email, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+              {/* Acciones */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleDailySave}
+                  disabled={dailySaving}
+                  className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  <div className="flex items-center space-x-3">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-900">{email}</span>
-                  </div>
-                  <button
-                    onClick={() => handleExpirationRemoveEmail(email)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar email"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-              No hay emails destinatarios configurados
-            </div>
-          )}
-        </div>
+                  {dailySaving ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5" />
+                      <span>Guardar</span>
+                    </>
+                  )}
+                </button>
 
-        {/* Días Antes del Vencimiento */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Calendar className="h-5 w-5 mr-2 text-[#065C5C]" />
-            Días Antes del Vencimiento
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Selecciona los días antes del vencimiento en los que se enviarán las notificaciones (ej: 14, 7, 3 días)
-          </p>
-
-          <div className="flex gap-3 mb-4">
-            <div className="flex-1">
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={expirationNewDay}
-                onChange={(e) => setExpirationNewDay(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleExpirationAddDay()
-                  }
-                }}
-                placeholder="Ej: 14 (días antes del vencimiento)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
-              />
-            </div>
-            <button
-              onClick={handleExpirationAddDay}
-              className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Agregar</span>
-            </button>
-          </div>
-
-          {expirationDaysBefore.length > 0 ? (
-            <div className="space-y-2">
-              {expirationDaysBefore.map((day, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200"
+                <button
+                  onClick={handleDailySendManual}
+                  disabled={dailySending || dailyRecipientEmails.length === 0}
+                  className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#87E0E0] text-[#004C4C] rounded-xl hover:bg-[#5FD3D2] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
                 >
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-4 w-4 text-amber-600" />
-                    <span className="text-gray-900 font-medium">
-                      {day} {day === 1 ? 'día' : 'días'} antes del vencimiento
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleExpirationRemoveDay(day)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar día"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-              No hay días configurados. Agrega al menos un día antes del vencimiento.
-            </div>
-          )}
-        </div>
-
-        {/* Programación de Envío */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-[#065C5C]" />
-            Programación de Envío
-          </h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hora de Envío (Hora Colombia)
-              </label>
-              <input
-                type="time"
-                value={expirationSendTime}
-                onChange={(e) => setExpirationSendTime(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                La hora se interpreta en zona horaria de Colombia (America/Bogota)
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Días de la Semana
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                {DAYS_OF_WEEK.map((day) => {
-                  const isSelected = expirationSendDays.includes(day.value)
-                  return (
-                    <button
-                      key={day.value}
-                      onClick={() => handleExpirationToggleDay(day.value)}
-                      className={`
-                        p-3 rounded-xl border-2 transition-all duration-200 text-center
-                        ${isSelected
-                          ? 'bg-[#065C5C] text-white border-[#065C5C]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-[#87E0E0]'
-                        }
-                      `}
-                    >
-                      <div className="font-semibold text-sm">{day.short}</div>
-                      <div className="text-xs opacity-75">{day.label}</div>
-                    </button>
-                  )
-                })}
+                  {dailySending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5" />
+                      <span>Enviar Manualmente</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Activar/Desactivar */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <Power className="h-5 w-5 mr-2 text-[#065C5C]" />
-                Envío Automático
-              </h3>
-              <p className="text-sm text-gray-600">
-                Activa o desactiva el envío automático de notificaciones según la programación configurada
+        {/* Tarjeta 2: Notificaciones de Vencimiento */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Header con gradiente */}
+          <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <Bell className="w-8 h-8" />
+                <button
+                  onClick={() => setExpirationExpanded(!expirationExpanded)}
+                  className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                >
+                  {expirationExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Notificaciones de Vencimiento</h3>
+              <p className="text-sm opacity-90 mb-3">
+                Configuración de notificaciones automáticas para contratos próximos a vencer
               </p>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm">{expirationRecipientEmails.length} email{expirationRecipientEmails.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-sm">{expirationDaysBefore.length} día{expirationDaysBefore.length !== 1 ? 's' : ''} configurado{expirationDaysBefore.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {expirationIsEnabled ? (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-sm">Activo</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span className="text-sm">Inactivo</span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => setExpirationIsEnabled(!expirationIsEnabled)}
-              className={`
-                relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#87E0E0] focus:ring-offset-2
-                ${expirationIsEnabled ? 'bg-[#065C5C]' : 'bg-gray-300'}
-              `}
-            >
-              <span
-                className={`
-                  inline-block h-6 w-6 transform rounded-full bg-white transition-transform
-                  ${expirationIsEnabled ? 'translate-x-7' : 'translate-x-1'}
-                `}
-              />
-            </button>
+            {/* Patrón decorativo */}
+            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
           </div>
 
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              {expirationIsEnabled ? (
-                <>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-700">
-                    Envío automático activado
-                  </span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-5 w-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600">
-                    Envío automático desactivado
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          {/* Contenido expandible */}
+          {expirationExpanded && (
+            <div className="p-6 space-y-6">
+              {/* Emails Destinatarios */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Mail className="h-5 w-5 mr-2 text-[#065C5C]" />
+                  Emails Destinatarios
+                </h4>
 
-        {/* Estado del Sistema */}
-        {expirationConfig && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2 text-[#065C5C]" />
-              Estado del Sistema
-            </h3>
-
-            <div className="space-y-4">
-              {expirationConfig.last_sent_at && (
-                <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex gap-3 mb-4">
                   <div className="flex-1">
-                    <div className="font-medium text-green-900">Último Envío Exitoso</div>
-                    <div className="text-sm text-green-700 mt-1">
-                      {formatDateColombia(expirationConfig.last_sent_at)}
+                    <input
+                      type="email"
+                      value={expirationNewEmail}
+                      onChange={(e) => setExpirationNewEmail(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleExpirationAddEmail()
+                        }
+                      }}
+                      placeholder="Ingresa el email destinatario"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+                  <button
+                    onClick={handleExpirationAddEmail}
+                    className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Agregar</span>
+                  </button>
+                </div>
+
+                {expirationRecipientEmails.length > 0 ? (
+                  <div className="space-y-2">
+                    {expirationRecipientEmails.map((email, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span className="text-gray-900">{email}</span>
+                        </div>
+                        <button
+                          onClick={() => handleExpirationRemoveEmail(email)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar email"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
+                    No hay emails destinatarios configurados
+                  </div>
+                )}
+              </div>
+
+              {/* Días Antes del Vencimiento */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-[#065C5C]" />
+                  Días Antes del Vencimiento
+                </h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Selecciona los días antes del vencimiento en los que se enviarán las notificaciones
+                </p>
+
+                <div className="flex gap-3 mb-4">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={expirationNewDay}
+                      onChange={(e) => setExpirationNewDay(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleExpirationAddDay()
+                        }
+                      }}
+                      placeholder="Ej: 14 (días antes del vencimiento)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+                  <button
+                    onClick={handleExpirationAddDay}
+                    className="px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors flex items-center space-x-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Agregar</span>
+                  </button>
+                </div>
+
+                {expirationDaysBefore.length > 0 ? (
+                  <div className="space-y-2">
+                    {expirationDaysBefore.map((day, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="h-4 w-4 text-amber-600" />
+                          <span className="text-gray-900 font-medium">
+                            {day} {day === 1 ? 'día' : 'días'} antes del vencimiento
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleExpirationRemoveDay(day)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar día"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
+                    No hay días configurados
+                  </div>
+                )}
+              </div>
+
+              {/* Programación de Envío */}
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Clock className="h-5 w-5 mr-2 text-[#065C5C]" />
+                  Programación de Envío
+                </h4>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Hora de Envío (Hora Colombia)
+                    </label>
+                    <input
+                      type="time"
+                      value={expirationSendTime}
+                      onChange={(e) => setExpirationSendTime(e.target.value)}
+                      className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Días de la Semana
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const isSelected = expirationSendDays.includes(day.value)
+                        return (
+                          <button
+                            key={day.value}
+                            onClick={() => handleExpirationToggleDay(day.value)}
+                            className={`
+                              p-3 rounded-xl border-2 transition-all duration-200 text-center
+                              ${isSelected
+                                ? 'bg-[#065C5C] text-white border-[#065C5C]'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-[#87E0E0]'
+                              }
+                            `}
+                          >
+                            <div className="font-semibold text-sm">{day.short}</div>
+                            <div className="text-xs opacity-75">{day.label}</div>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {expirationConfig.last_error && (
-                <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
-                  <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="font-medium text-red-900">Último Error</div>
-                    <div className="text-sm text-red-700 mt-1">{expirationConfig.last_error}</div>
-                    {expirationConfig.last_executed_at && (
-                      <div className="text-xs text-red-600 mt-1">
-                        Ocurrió el {formatDateColombia(expirationConfig.last_executed_at)}
+              {/* Activar/Desactivar */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                      <Power className="h-5 w-5 mr-2 text-[#065C5C]" />
+                      Envío Automático
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Activa o desactiva el envío automático de notificaciones
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setExpirationIsEnabled(!expirationIsEnabled)}
+                    className={`
+                      relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#87E0E0] focus:ring-offset-2
+                      ${expirationIsEnabled ? 'bg-[#065C5C]' : 'bg-gray-300'}
+                    `}
+                  >
+                    <span
+                      className={`
+                        inline-block h-6 w-6 transform rounded-full bg-white transition-transform
+                        ${expirationIsEnabled ? 'translate-x-7' : 'translate-x-1'}
+                      `}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Estado del Sistema */}
+              {expirationConfig && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2 text-[#065C5C]" />
+                    Estado del Sistema
+                  </h4>
+
+                  <div className="space-y-4">
+                    {expirationConfig.last_sent_at && (
+                      <div className="flex items-start space-x-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-green-900">Último Envío Exitoso</div>
+                          <div className="text-sm text-green-700 mt-1">
+                            {formatDateColombia(expirationConfig.last_sent_at)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {expirationConfig.last_error && (
+                      <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                        <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-red-900">Último Error</div>
+                          <div className="text-sm text-red-700 mt-1">{expirationConfig.last_error}</div>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
 
-              {!expirationConfig.last_sent_at && !expirationConfig.last_error && (
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-                  Aún no se ha ejecutado ningún envío
-                </div>
-              )}
+              {/* Acciones */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleExpirationSave}
+                  disabled={expirationSaving}
+                  className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  {expirationSaving ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5" />
+                      <span>Guardar</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handleExpirationSendManual}
+                  disabled={expirationSending || expirationRecipientEmails.length === 0}
+                  className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#87E0E0] text-[#004C4C] rounded-xl hover:bg-[#5FD3D2] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+                >
+                  {expirationSending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5" />
+                      <span>Enviar Manualmente</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-
-        {/* Acciones */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <button
-            onClick={handleExpirationSave}
-            disabled={expirationSaving}
-            className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#065C5C] text-white rounded-xl hover:bg-[#004C4C] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {expirationSaving ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Guardando...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5" />
-                <span>Guardar Configuración</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleExpirationSendManual}
-            disabled={expirationSending || expirationRecipientEmails.length === 0}
-            className="flex-1 flex items-center justify-center space-x-2 px-6 py-3 bg-[#87E0E0] text-[#004C4C] rounded-xl hover:bg-[#5FD3D2] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
-          >
-            {expirationSending ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Enviando...</span>
-              </>
-            ) : (
-              <>
-                <Send className="h-5 w-5" />
-                <span>Enviar Notificaciones Manualmente</span>
-              </>
-            )}
-          </button>
+          )}
         </div>
       </div>
 
