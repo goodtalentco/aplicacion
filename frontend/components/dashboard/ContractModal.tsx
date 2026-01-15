@@ -5,7 +5,6 @@ import { X, User, FileText, CheckSquare, ChevronRight, Shield, AlertTriangle, Se
 import { supabase } from '../../lib/supabaseClient'
 import { Contract, getContractStatusConfig, calculateTotalRemuneration, formatCurrency, Auxilio } from '../../types/contract'
 import OCRButton from '../ocr/OCRButton'
-import ContractModalOnboarding from './ContractModalOnboarding'
 import CompanySelector from '../ui/CompanySelector'
 import CitySelector from '../ui/CitySelector'
 import ContractHistorialModal from './ContractHistorialModal'
@@ -29,8 +28,9 @@ interface ContractModalProps {
 }
 
 /**
- * Modal moderno de 3 pestañas para crear y editar contratos
+ * Modal moderno de 2 pestañas para crear y editar contratos
  * Diseño responsive con stepper horizontal y validaciones en tiempo real
+ * Nota: El proceso de onboarding se gestiona en el módulo de Contratación
  */
 
 export default function ContractModal({
@@ -462,11 +462,10 @@ export default function ContractModal({
     return `${añoResult}-${mesResult}-${diaResult}`
   }
 
-  // Tabs configuration
+  // Tabs configuration (Onboarding removido - se gestiona en el módulo de Contratación)
   const tabs = [
     { id: 0, name: 'Información Personal', icon: User, color: 'text-blue-600' },
-    { id: 1, name: 'Detalles del Contrato', icon: FileText, color: 'text-green-600' },
-    { id: 2, name: 'Onboarding', icon: CheckSquare, color: 'text-purple-600' }
+    { id: 1, name: 'Detalles del Contrato', icon: FileText, color: 'text-green-600' }
   ]
 
   // Bloquear scroll del body cuando el modal está abierto
@@ -909,12 +908,6 @@ export default function ContractModal({
         return ['primer_nombre', 'primer_apellido', 'numero_identificacion', 'fecha_nacimiento', 'email'].includes(field)
       } else if (currentTab === 1) {
         return ['empresa_final_id', 'fecha_fin', 'salario', 'moneda_custom'].includes(field)
-      } else if (currentTab === 2) {
-        return [
-          'examenes_fecha', 'contrato_fecha_confirmacion', 'arl_nombre', 'arl_fecha_confirmacion',
-          'radicado_eps', 'eps_fecha_confirmacion', 'radicado_ccf', 'caja_fecha_confirmacion',
-          'fondo_cesantias', 'cesantias_fecha_confirmacion', 'fondo_pension', 'pension_fecha_confirmacion'
-        ].includes(field)
       }
       return false
     })
@@ -2502,47 +2495,6 @@ export default function ContractModal({
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Tab 3: Onboarding */}
-            {currentTab === 2 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Proceso de Onboarding</h3>
-                  <div className="text-sm text-gray-600">
-                    Progreso: {Math.round(
-                      (                      [
-                        formData.programacion_cita_examenes,
-                        formData.examenes && formData.examenes_fecha,
-                        formData.envio_contrato,
-                        formData.recibido_contrato_firmado && formData.contrato_fecha_confirmacion,
-                        formData.solicitud_inscripcion_arl,
-                        formData.arl_nombre && formData.arl_fecha_confirmacion,
-                        formData.solicitud_eps,
-                        formData.radicado_eps && formData.eps_fecha_confirmacion,
-                        formData.envio_inscripcion_caja,
-                        formData.radicado_ccf && formData.caja_fecha_confirmacion,
-                        formData.solicitud_cesantias && formData.fondo_cesantias && formData.cesantias_fecha_confirmacion,
-                        formData.solicitud_fondo_pension && formData.fondo_pension && formData.pension_fecha_confirmacion
-                      ].filter(Boolean).length / 12) * 100
-                    )}%
-                  </div>
-                </div>
-
-
-
-                {/* Onboarding reorganizado por procesos */}
-                <ContractModalOnboarding
-                  formData={formData}
-                  isReadOnly={isReadOnly}
-                  handleInputChange={handleInputChange}
-                  getInputProps={getInputProps}
-                  getCheckboxProps={getCheckboxProps}
-                  errors={errors}
-                  cajaCompensacionActiva={cajaCompensacionActiva}
-                  arlActiva={arlActiva}
-                />
 
                 {/* URL de Dropbox */}
                 <div>
@@ -2568,7 +2520,7 @@ export default function ContractModal({
                     value={formData.observacion || ''}
                     onChange={(e) => !isReadOnly && handleInputChange('observacion', e.target.value)}
                     {...getInputProps('observacion')}
-                    placeholder="Notas adicionales sobre el contrato o proceso de onboarding..."
+                    placeholder="Notas adicionales sobre el contrato..."
                     style={{ resize: 'none' }}
                   />
                 </div>

@@ -179,8 +179,15 @@ export default function ContratosPage() {
         }
       })
       
+      // FILTRAR: Solo contratos con onboarding completo (>= 100%)
+      // Los contratos en proceso de contratación deben estar solo en el módulo Contratación
+      const contractsWithOnboardingComplete = enrichedContractsData.filter(contract => {
+        const progress = contract.contracts_onboarding_progress || 0
+        return progress >= 100
+      })
+      
       // Ordenar alfabéticamente por nombre de empresa cliente
-      const sortedContractsData = enrichedContractsData.sort((a, b) => {
+      const sortedContractsData = contractsWithOnboardingComplete.sort((a, b) => {
         const companyA = a.company?.name || 'Sin empresa'
         const companyB = b.company?.name || 'Sin empresa'
         return companyA.localeCompare(companyB, 'es', { sensitivity: 'base' })

@@ -425,8 +425,17 @@ export default function ContractsTable({
 
     // Buscar el contrato para verificar si se puede editar
     const contract = contracts.find(c => c.id === contractId)
-    if (!contract || !getContractStatusConfig(contract).can_edit) {
-      showInfoToast('Este contrato no se puede editar porque ya está aprobado', 'warning')
+    if (!contract) {
+      showInfoToast('Contrato no encontrado', 'warning')
+      return
+    }
+    
+    // Permitir editar campos de onboarding si el progreso < 100% (en proceso de contratación)
+    // o si el contrato está en borrador
+    const statusConfig = getContractStatusConfig(contract)
+    const progress = contract.contracts_onboarding_progress || 0
+    if (!statusConfig.can_edit && progress >= 100) {
+      showInfoToast('Este contrato no se puede editar porque ya está aprobado y completó el onboarding', 'warning')
       return
     }
 
@@ -1016,7 +1025,10 @@ export default function ContractsTable({
                       const isVirtual = field.isVirtual || false
                       const confirmationState = getFieldConfirmationState(contract, field.key)
                       const statusConfig = getContractStatusConfig(contract)
-                      const canEditField = canUpdate && statusConfig.can_edit
+                      // Permitir editar campos de onboarding si el progreso < 100% (en proceso de contratación)
+                      // o si el contrato está en borrador
+                      const progress = contract.contracts_onboarding_progress || 0
+                      const canEditField = canUpdate && (statusConfig.can_edit || progress < 100)
                       
                       // Para campos virtuales, el "currentValue" se determina por el estado de confirmación
                       const currentValue = isVirtual 
