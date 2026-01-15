@@ -33,6 +33,7 @@ export default function ContratosPage() {
   const [filterVigencia, setFilterVigencia] = useState<FilterVigencia>('all')
   const [filterCompanyId, setFilterCompanyId] = useState('')
   // Filtro de onboarding removido - no aplica para módulo de Contratos
+  const [filterResponsable, setFilterResponsable] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingContract, setEditingContract] = useState<Contract | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
@@ -496,7 +497,10 @@ export default function ContratosPage() {
         setFilterCompanyId={setFilterCompanyId}
         filterOnboarding={'all'}
         setFilterOnboarding={() => {}}
+        filterResponsable={filterResponsable}
+        setFilterResponsable={setFilterResponsable}
         companies={companies}
+        users={[]}
         stats={stats}
       />
 
