@@ -79,7 +79,7 @@ export default function ContratacionPage() {
           alias: u.alias || null,
           display_name: u.display_name || null
         }))
-        .sort((a, b) => {
+        .sort((a: {display_name?: string | null, alias?: string | null, email: string}, b: {display_name?: string | null, alias?: string | null, email: string}) => {
           const nameA = a.display_name || a.alias || a.email
           const nameB = b.display_name || b.alias || b.email
           return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
