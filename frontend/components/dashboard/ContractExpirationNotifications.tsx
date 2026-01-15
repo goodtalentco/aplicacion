@@ -122,7 +122,7 @@ export default function ContractExpirationNotifications() {
 
           expiringContracts.push({
             id: contract.id,
-            nombre_completo,
+            nombre_completo: nombreCompleto,
             cedula: contract.numero_identificacion,
             empresa,
             fecha_vencimiento: contract.fecha_fin,
