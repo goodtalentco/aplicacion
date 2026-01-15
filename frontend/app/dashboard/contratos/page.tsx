@@ -150,23 +150,36 @@ export default function ContratosPage() {
           contract.segundo_apellido
         ].filter(Boolean).join(' ').trim()
 
-        // Calcular progreso de onboarding
+        // Calcular progreso de onboarding (12 pasos según función SQL)
+        // Debe coincidir exactamente con contracts_onboarding_progress() en la BD
         const onboardingFields = [
+          // 1. Programación cita exámenes
           contract.programacion_cita_examenes,
-          contract.examenes,
-          contract.solicitud_inscripcion_arl,
-          !!contract.arl_nombre && !!contract.arl_fecha_confirmacion, // confirmación ARL inferida
+          // 2. Exámenes con fecha
+          contract.examenes && contract.examenes_fecha,
+          // 3. Envío contrato
           contract.envio_contrato,
-          contract.recibido_contrato_firmado,
+          // 4. Contrato recibido y confirmado
+          contract.recibido_contrato_firmado && contract.contrato_fecha_confirmacion,
+          // 5. Solicitud inscripción ARL
+          contract.solicitud_inscripcion_arl,
+          // 6. ARL confirmada (nombre + fecha)
+          !!contract.arl_nombre && !!contract.arl_fecha_confirmacion,
+          // 7. Solicitud EPS
           contract.solicitud_eps,
-          !!contract.eps_fecha_confirmacion, // confirmación EPS inferida
+          // 8. EPS confirmada (radicado + fecha)
+          !!contract.radicado_eps && !!contract.eps_fecha_confirmacion,
+          // 9. Envío inscripción caja
           contract.envio_inscripcion_caja,
-          !!contract.caja_fecha_confirmacion, // confirmación caja inferida
-          contract.radicado_eps,
-          contract.radicado_ccf
+          // 10. Caja confirmada (radicado + fecha)
+          !!contract.radicado_ccf && !!contract.caja_fecha_confirmacion,
+          // 11. Cesantías confirmadas (solicitud + fondo + fecha)
+          contract.solicitud_cesantias && !!contract.fondo_cesantias && !!contract.cesantias_fecha_confirmacion,
+          // 12. Pensión confirmada (solicitud + fondo + fecha)
+          contract.solicitud_fondo_pension && !!contract.fondo_pension && !!contract.pension_fecha_confirmacion
         ]
         const completedFields = onboardingFields.filter(Boolean).length
-        const onboardingProgress = Math.round((completedFields / onboardingFields.length) * 100)
+        const onboardingProgress = Math.round((completedFields / 12) * 100)
 
         return {
           ...contract,
