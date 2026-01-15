@@ -18,6 +18,7 @@ import { Contract, Company, getStatusVigencia, getContractStatusConfig } from '.
 export default function ContratacionPage() {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [users, setUsers] = useState<Array<{id: string, email: string, alias?: string | null, display_name?: string | null}>>([])
   const [loading, setLoading] = useState(true)
   const [loadingRef, setLoadingRef] = useState(false)
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -27,6 +28,7 @@ export default function ContratacionPage() {
   const [filterVigencia, setFilterVigencia] = useState<FilterVigencia>('all')
   const [filterCompanyId, setFilterCompanyId] = useState('')
   const [filterOnboarding, setFilterOnboarding] = useState<FilterOnboarding>('all')
+  const [filterResponsable, setFilterResponsable] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
   const [editingContract, setEditingContract] = useState<Contract | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
