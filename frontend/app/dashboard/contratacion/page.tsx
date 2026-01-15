@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabaseClient'
 import { usePermissions } from '../../../lib/usePermissions'
 import ContractModal from '../../../components/dashboard/ContractModal'
 import ContractsTable from '../../../components/dashboard/ContractsTable'
-import ContractsFilters, { FilterEmpresa, FilterAprobacion, FilterVigencia, FilterOnboarding } from '../../../components/dashboard/ContractsFilters'
+import ContractsFilters, { FilterEmpresa, FilterAprobacion, FilterVigencia, FilterOnboarding, FilterResponsable } from '../../../components/dashboard/ContractsFilters'
 import Toast from '../../../components/dashboard/Toast'
 import { Contract, Company, getStatusVigencia, getContractStatusConfig } from '../../../types/contract'
 
@@ -18,7 +18,7 @@ import { Contract, Company, getStatusVigencia, getContractStatusConfig } from '.
 export default function ContratacionPage() {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
-  const [users, setUsers] = useState<Array<{id: string, email: string, alias?: string | null, display_name?: string | null}>>([])
+  const [users, setUsers] = useState<Array<{id: string, email: string, alias?: string, display_name?: string | null}>>([])
   const [loading, setLoading] = useState(true)
   const [loadingRef, setLoadingRef] = useState(false)
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -73,15 +73,24 @@ export default function ContratacionPage() {
       }
 
       // Filtrar solo usuarios activos y formatear
-      const activeUsers = (data || [])
+      const activeUsers: Array<{id: string, email: string, alias?: string, display_name?: string | null}> = (data || [])
         .filter((u: any) => u.is_active !== false)
-        .map((u: any) => ({
-          id: u.user_id,
-          email: u.auth_email || u.notification_email || '',
-          alias: u.alias || null,
-          display_name: u.display_name || null
-        }))
-        .sort((a: {display_name?: string | null, alias?: string | null, email: string}, b: {display_name?: string | null, alias?: string | null, email: string}) => {
+        .map((u: any) => {
+          // Asegurar que alias nunca sea null, solo string o undefined
+          const alias: string | undefined = (u.alias && typeof u.alias === 'string' && u.alias.trim() !== '') ? u.alias : undefined
+          // display_name puede ser string, null o undefined según UserFilter
+          const display_name: string | null | undefined = (u.display_name && typeof u.display_name === 'string' && u.display_name.trim() !== '') 
+            ? u.display_name 
+            : (u.display_name === null ? null : undefined)
+          
+          return {
+            id: u.user_id,
+            email: u.auth_email || u.notification_email || '',
+            alias,
+            display_name
+          }
+        })
+        .sort((a: {display_name?: string | null, alias?: string, email: string}, b: {display_name?: string | null, alias?: string, email: string}) => {
           const nameA = a.display_name || a.alias || a.email
           const nameB = b.display_name || b.alias || b.email
           return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
