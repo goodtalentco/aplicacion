@@ -614,13 +614,22 @@ export default function ContratosPage() {
 
       {/* FAB desktop */}
       {canCreate && (
-        <button
-          onClick={handleCreateNew}
-          className="hidden lg:flex fixed bottom-8 right-8 z-40 px-5 py-3 rounded-full shadow-xl text-white bg-gradient-to-br from-[#004C4C] to-[#065C5C] items-center space-x-2 hover:scale-105 transition-transform"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Nuevo contrato</span>
-        </button>
+        <div className="hidden lg:flex fixed bottom-8 right-8 z-40 flex-col items-end space-y-2">
+          <button
+            onClick={handleCreateExistingEmployee}
+            className="px-5 py-3 rounded-full shadow-xl text-white bg-gradient-to-br from-[#0A6A6A] to-[#5FD3D2] items-center space-x-2 hover:scale-105 transition-transform flex"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Agregar empleado existente</span>
+          </button>
+          <button
+            onClick={handleCreateNew}
+            className="px-5 py-3 rounded-full shadow-xl text-white bg-gradient-to-br from-[#004C4C] to-[#065C5C] items-center space-x-2 hover:scale-105 transition-transform flex"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Nuevo contrato</span>
+          </button>
+        </div>
       )}
 
       {/* Toast */}
