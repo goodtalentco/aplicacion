@@ -937,9 +937,89 @@ SELECT * FROM get_parametro_anual('auxilio_transporte');
 
 ---
 
+### 16. `contract_expiration_notifications_config` – Configuración de Notificaciones de Vencimiento
+
+**Propósito:** Configuración para el sistema de notificaciones automáticas de contratos próximos a vencer.
+
+| Columna | Tipo | Descripción | Ejemplo |
+|---------|------|-------------|---------|
+| `id` | UUID (PK) | Identificador único | `config-uuid-123` |
+| `recipient_emails` | JSONB | Array de emails destinatarios | `["email1@example.com", "email2@example.com"]` |
+| `days_before_expiration` | JSONB | Días antes del vencimiento para notificar | `[14, 7, 3]` |
+| `send_time` | TEXT | Hora de envío (HH:MM, hora Colombia) | `"08:00"` |
+| `send_days_of_week` | JSONB | Días de la semana (0=domingo, 1=lunes, ..., 6=sábado) | `[1,2,3,4,5]` |
+| `is_enabled` | BOOLEAN | Si el envío automático está activado | `true` |
+| `last_sent_at` | TIMESTAMPTZ | Último envío exitoso | `2025-01-22 08:00:00` |
+| `last_executed_at` | TIMESTAMPTZ | Última ejecución (exitosa o fallida) | `2025-01-22 08:00:00` |
+| `last_error` | TEXT | Último error si hubo fallo | `NULL` o `"Error al conectar con Resend"` |
+| `created_at` | TIMESTAMPTZ | Fecha de creación | `2025-01-22 10:00:00` |
+| `updated_at` | TIMESTAMPTZ | Fecha de última actualización | `2025-01-22 14:30:00` |
+| `created_by` | UUID (FK) | Usuario que creó el registro | `user-uuid` |
+| `updated_by` | UUID (FK) | Usuario que actualizó el registro | `user-uuid` |
+
+**Restricciones:**
+- `UNIQUE INDEX ON (1)` - Solo una configuración puede existir
+- `send_time` debe seguir formato HH:MM (regex: `^([0-1][0-9]|2[0-3]):[0-5][0-9]$`)
+- `recipient_emails` debe ser un array JSON
+- `days_before_expiration` debe ser un array JSON con valores entre 1 y 60
+- `send_days_of_week` debe ser un array JSON
+- Si `is_enabled = true`, entonces `recipient_emails`, `days_before_expiration` y `send_days_of_week` no pueden estar vacíos
+
+**Funciones Helper:**
+- `get_contract_expiration_notifications_config()` - Obtiene la configuración (siempre hay una sola)
+- `ensure_contract_expiration_notifications_config()` - Crea configuración por defecto si no existe
+
+**Seguridad RLS:**
+- **Ver:** Usuarios con permiso `user_permissions.view` o super admins
+- **Crear:** Usuarios con permiso `user_permissions.create` o super admins
+- **Editar:** Usuarios con permiso `user_permissions.edit` o super admins
+
+**Triggers:**
+- `trigger_contract_expiration_notifications_config_updated_at` - Actualiza `updated_at` automáticamente
+
+**Propósito:** Permite configurar el sistema de envío automático de notificaciones de vencimiento de contratos por email. Las notificaciones se envían cuando un contrato está próximo a vencer según los días configurados (ej: 14, 7, 3 días antes).
+
+---
+
+### 17. `contract_expiration_notifications` – Historial de Notificaciones de Vencimiento
+
+**Propósito:** Registro de todas las notificaciones de vencimiento enviadas para evitar duplicados y tracking.
+
+| Columna | Tipo | Descripción | Ejemplo |
+|---------|------|-------------|---------|
+| `id` | UUID (PK) | Identificador único | `notification-uuid-123` |
+| `contract_id` | UUID (FK) | Contrato relacionado | `contract-uuid-123` |
+| `days_before_expiration` | INTEGER | Días antes del vencimiento cuando se notificó | `14` |
+| `expiration_date` | DATE | Fecha de vencimiento del contrato | `2025-02-05` |
+| `sent_at` | TIMESTAMPTZ | Fecha en que se envió la notificación | `2025-01-22 08:00:00` |
+| `recipient_email` | TEXT | Email al que se envió | `admin@example.com` |
+| `is_read` | BOOLEAN | Si la notificación fue leída en la app | `false` |
+| `created_at` | TIMESTAMPTZ | Fecha de creación | `2025-01-22 08:00:00` |
+
+**Relaciones:**
+- `contract_id` → `contracts(id)` (ON DELETE CASCADE)
+
+**Restricciones:**
+- `days_before_expiration` debe estar entre 1 y 60
+
+**Índices:**
+- `idx_contract_expiration_notifications_contract_id` - Búsqueda por contrato
+- `idx_contract_expiration_notifications_expiration_date` - Búsqueda por fecha de vencimiento
+- `idx_contract_expiration_notifications_sent_at` - Búsqueda por fecha de envío
+- `idx_contract_expiration_notifications_is_read` - Búsqueda de no leídas
+
+**Seguridad RLS:**
+- **Ver:** Usuarios pueden ver sus propias notificaciones (según `recipient_email`) o todas si tienen permiso `contracts.view`
+- **Crear:** Usuarios con permiso `contracts.view` o super admins
+- **Editar:** Usuarios pueden editar sus propias notificaciones o todas si tienen permiso `contracts.view`
+
+**Propósito:** Mantiene un registro de todas las notificaciones enviadas para evitar duplicados y permitir tracking de notificaciones leídas en la aplicación.
+
+---
+
 ## 🕒 Sistema de Períodos de Contratos Fijos
 
-### 16. `historial_contratos_fijos` – Períodos de Contratos a Término Fijo
+### 18. `historial_contratos_fijos` – Períodos de Contratos a Término Fijo
 
 **Propósito:** Gestión completa del historial de períodos de contratos fijos, incluyendo períodos históricos y prórrogas.
 

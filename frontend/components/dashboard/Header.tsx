@@ -14,6 +14,7 @@ import {
   Settings,
   Database
 } from 'lucide-react'
+import ContractExpirationNotifications from './ContractExpirationNotifications'
 
 /**
  * Header principal del dashboard con usuario, notificaciones y búsqueda
@@ -112,14 +113,8 @@ export default function Header() {
         {/* Right Side - Notifications + User */}
         <div className="flex items-center space-x-4">
           
-          {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:text-[#004C4C] hover:bg-gray-100 rounded-xl transition-all duration-200">
-            <Bell className="h-5 w-5" />
-            {/* Notification badge */}
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-              3
-            </span>
-          </button>
+          {/* Contract Expiration Notifications */}
+          <ContractExpirationNotifications />
 
           {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
