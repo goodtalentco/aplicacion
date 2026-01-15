@@ -337,6 +337,9 @@ export default function ContratacionPage() {
     // Filtro por empresa cliente
     const matchesCompany = filterCompanyId === '' || contract.empresa_final_id === filterCompanyId
 
+    // Filtro por responsable
+    const matchesResponsable = filterResponsable === 'all' || contract.responsable_contratacion_id === filterResponsable
+
     // Filtro por onboarding inteligente (todos los campos)
     const matchesOnboarding = (() => {
       switch (filterOnboarding) {
