@@ -9,7 +9,8 @@ import {
   Bell, 
   Scale, 
   Shield,
-  LayoutDashboard 
+  LayoutDashboard,
+  UserPlus
 } from 'lucide-react'
 
 /**
@@ -30,6 +31,11 @@ export default function BottomNavigation() {
       name: 'Empresas',
       href: '/dashboard/empresas',
       icon: Building2
+    },
+    {
+      name: 'Contratación',
+      href: '/dashboard/contratacion',
+      icon: UserPlus
     },
     {
       name: 'Contratos',

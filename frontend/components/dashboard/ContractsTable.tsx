@@ -194,6 +194,7 @@ interface ContractsTableProps {
   canDelete: boolean
   onApprove?: (contract: Contract) => void
   refreshTrigger?: number
+  showOnboarding?: boolean // Si es false, oculta columnas de onboarding
 }
 
 type OnboardingField = 
@@ -223,7 +224,8 @@ export default function ContractsTable({
   canUpdate,
   canDelete,
   onApprove,
-  refreshTrigger = 0
+  refreshTrigger = 0,
+  showOnboarding = true // Por defecto mostrar onboarding para mantener compatibilidad
 }: ContractsTableProps) {
   const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0)
   
@@ -282,6 +284,11 @@ export default function ContractsTable({
       '130px'  // Total Remuneración
     ]
     
+    if (!showOnboarding) {
+      // Solo columnas base sin onboarding
+      return baseColumns.join(' ')
+    }
+    
     // Agregar columnas dinámicas para onboarding (85px cada una)
     const onboardingColumns = onboardingFields.map(() => '85px')
     
@@ -296,6 +303,12 @@ export default function ContractsTable({
 
   // Calcular ancho mínimo dinámicamente
   const calculateMinWidth = () => {
+    if (!showOnboarding) {
+      const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 // Columnas base: 920px
+      const gaps = 7 * 8 // 8px gap entre columnas
+      return baseWidth + gaps + 50 // +50px margen de seguridad
+    }
+    
     const baseWidth = 100 + 200 + 140 + 130 + 110 + 110 + 130 + 90 // Columnas fijas: 1010px
     const onboardingWidth = onboardingFields.length * 85 // Columnas dinámicas
     const gaps = (7 + onboardingFields.length) * 8 // 8px gap entre columnas
@@ -744,14 +757,14 @@ export default function ContractsTable({
             <div>Total Remuneración</div>
             
             {/* Todos los campos de onboarding (12 campos) con labels escritos */}
-            {onboardingFields.map(field => (
+            {showOnboarding && onboardingFields.map(field => (
               <div key={field.key} className="text-center text-sm">
                 <div className="break-words leading-tight font-medium">{field.label}</div>
               </div>
             ))}
             
             {/* Progreso */}
-            <div>Progreso</div>
+            {showOnboarding && <div>Progreso</div>}
           </div>
 
           {/* Filas de la tabla dentro del mismo contenedor */}
@@ -998,7 +1011,7 @@ export default function ContractsTable({
                     </div>
 
                     {/* Todos los campos de onboarding (12 campos) */}
-                    {onboardingFields.map(field => {
+                    {showOnboarding && onboardingFields.map(field => {
                       const isLoading = loadingInline.has(contract.id!)
                       const isVirtual = field.isVirtual || false
                       const confirmationState = getFieldConfirmationState(contract, field.key)
@@ -1090,19 +1103,21 @@ export default function ContractsTable({
                     })}
 
                     {/* Progreso */}
-                    <div>
-                      <div className="flex items-center space-x-1">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(progress)}`}
-                            style={{ width: `${progress}%` }}
-                          />
+                    {showOnboarding && (
+                      <div>
+                        <div className="flex items-center space-x-1">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(progress)}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-gray-600">
+                            {progress}%
+                          </span>
                         </div>
-                        <span className="text-xs font-medium text-gray-600">
-                          {progress}%
-                        </span>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Fila expandida - SOLO INFORMATIVA (no editable) */}

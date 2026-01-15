@@ -18,7 +18,8 @@ import { Contract, Company, getStatusVigencia, getContractStatusConfig } from '.
 
 /**
  * Página principal del módulo Contratos
- * Gestión completa de contratos laborales con CRUD, filtros avanzados y onboarding tracking
+ * Gestión de contratos laborales activos (empleados oficiales que completaron onboarding)
+ * Vista simplificada sin campos de onboarding
  */
 export default function ContratosPage() {
   const [contracts, setContracts] = useState<Contract[]>([])
@@ -31,7 +32,7 @@ export default function ContratosPage() {
   const [filterAprobacion, setFilterAprobacion] = useState<FilterAprobacion>('all')
   const [filterVigencia, setFilterVigencia] = useState<FilterVigencia>('all')
   const [filterCompanyId, setFilterCompanyId] = useState('')
-  const [filterOnboarding, setFilterOnboarding] = useState<FilterOnboarding>('all')
+  // Filtro de onboarding removido - no aplica para módulo de Contratos
   const [showModal, setShowModal] = useState(false)
   const [editingContract, setEditingContract] = useState<Contract | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
@@ -285,38 +286,9 @@ export default function ContratosPage() {
     // Filtro por empresa cliente
     const matchesCompany = filterCompanyId === '' || contract.empresa_final_id === filterCompanyId
 
-    // Filtro por onboarding inteligente (todos los campos)
-    const matchesOnboarding = (() => {
-      switch (filterOnboarding) {
-        case 'all':
-          return true
-        
-        // Filtros principales
-        case 'sin_arl':
-          return !(contract.arl_nombre && contract.arl_fecha_confirmacion)
-        case 'sin_eps':
-          return !contract.eps_fecha_confirmacion
-        
-        // Filtros adicionales
-        case 'sin_programacion_cita':
-          return !contract.programacion_cita_examenes
-        case 'sin_solicitud_arl':
-          return !contract.solicitud_inscripcion_arl
-        case 'sin_envio_contrato':
-          return !contract.envio_contrato
-        case 'sin_solicitud_eps':
-          return !contract.solicitud_eps
-        case 'sin_caja':
-          return !contract.caja_fecha_confirmacion
-        case 'sin_radicados':
-          return !contract.radicado_eps && !contract.radicado_ccf
-        
-        default:
-          return true
-      }
-    })()
+    // Filtro de onboarding removido - no aplica para módulo de Contratos
 
-    return matchesSearch && matchesEmpresa && matchesAprobacion && matchesVigencia && matchesCompany && matchesOnboarding
+    return matchesSearch && matchesEmpresa && matchesAprobacion && matchesVigencia && matchesCompany
   })
 
   // Estadísticas completas para filtros inteligentes
@@ -478,7 +450,7 @@ export default function ContratosPage() {
             <span>Contratos</span>
           </h1>
           <p className="text-gray-600 mt-2">
-            Gestión eficiente de contratos con edición en masa y seguimiento de onboarding
+            Gestión de empleados oficiales y contratos activos
           </p>
         </div>
       </div>
@@ -495,8 +467,8 @@ export default function ContratosPage() {
         setFilterVigencia={setFilterVigencia}
         filterCompanyId={filterCompanyId}
         setFilterCompanyId={setFilterCompanyId}
-        filterOnboarding={filterOnboarding}
-        setFilterOnboarding={setFilterOnboarding}
+        filterOnboarding={'all'}
+        setFilterOnboarding={() => {}}
         companies={companies}
         stats={stats}
       />
@@ -565,6 +537,7 @@ export default function ContratosPage() {
             loadContracts()
           }}
           refreshTrigger={refreshTrigger}
+          showOnboarding={false}
         />
         </div>
       )}

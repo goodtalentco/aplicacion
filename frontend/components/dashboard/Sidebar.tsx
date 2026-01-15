@@ -12,7 +12,8 @@ import {
   Shield,
   LayoutDashboard,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  UserPlus
 } from 'lucide-react'
 
 /**
@@ -35,7 +36,11 @@ export default function Sidebar() {
       href: '/dashboard/empresas',
       icon: Building2
     },
-
+    {
+      name: 'Contratación',
+      href: '/dashboard/contratacion',
+      icon: UserPlus
+    },
     {
       name: 'Contratos',
       href: '/dashboard/contratos',
