@@ -69,6 +69,10 @@ export default function ContractModal({
     loading: false
   })
   
+  // Permisos
+  const { hasPermission } = usePermissions()
+  const canEditResponsable = hasPermission('contracts', 'admin')
+  
   // Lógica de estados del contrato
   const statusConfig = contract ? getContractStatusConfig(contract) : null
   const isReadOnly = Boolean(contract && statusConfig && !statusConfig.can_edit)
