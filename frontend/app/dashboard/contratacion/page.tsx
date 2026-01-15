@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { UserPlus, Plus } from 'lucide-react'
+import { UserPlus, Plus, Download } from 'lucide-react'
 import { supabase } from '../../../lib/supabaseClient'
 import { usePermissions } from '../../../lib/usePermissions'
 import ContractModal from '../../../components/dashboard/ContractModal'
@@ -485,6 +485,201 @@ export default function ContratacionPage() {
     }, 100)
   }
 
+  // Función para exportar a CSV
+  const handleExportToCSV = () => {
+    if (!canEditResponsable) {
+      setToastType('error')
+      setToastMsg('No tienes permisos para exportar el listado')
+      setToastOpen(true)
+      return
+    }
+
+    // Obtener contratos filtrados (usar la misma lógica de filtrado)
+    const filtered = contracts.filter(contract => {
+      const fullName = contract.contracts_full_name || `${contract.primer_nombre} ${contract.primer_apellido}`
+      const matchesSearch = searchTerm === '' || 
+        fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contract.numero_identificacion.includes(searchTerm) ||
+        (contract.numero_contrato_helisa || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contract.company?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (contract.cargo || '').toLowerCase().includes(searchTerm.toLowerCase())
+
+      const matchesEmpresa = 
+        filterEmpresa === 'all' ||
+        (filterEmpresa === 'good' && contract.empresa_interna === 'Good') ||
+        (filterEmpresa === 'cps' && contract.empresa_interna === 'CPS')
+
+      const matchesAprobacion = (() => {
+        if (filterAprobacion === 'all') return true
+        const statusConfig = getContractStatusConfig(contract)
+        return filterAprobacion === statusConfig.status_aprobacion
+      })()
+
+      const matchesVigencia = (() => {
+        if (filterVigencia === 'all') return true
+        if (filterVigencia === 'por_vencer') {
+          if (contract.tipo_contrato !== 'fijo' || getStatusVigencia(contract.fecha_fin) !== 'activo') return false
+          if (!contract.fecha_fin) return false
+          const fechaFin = new Date(contract.fecha_fin)
+          const hoy = new Date()
+          hoy.setHours(0, 0, 0, 0)
+          fechaFin.setHours(0, 0, 0, 0)
+          const diffTime = fechaFin.getTime() - hoy.getTime()
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          return diffDays <= 45 && diffDays > 35
+        }
+        if (filterVigencia === 'critico') {
+          if (contract.tipo_contrato !== 'fijo' || getStatusVigencia(contract.fecha_fin) !== 'activo') return false
+          if (!contract.fecha_fin) return false
+          const fechaFin = new Date(contract.fecha_fin)
+          const hoy = new Date()
+          hoy.setHours(0, 0, 0, 0)
+          fechaFin.setHours(0, 0, 0, 0)
+          const diffTime = fechaFin.getTime() - hoy.getTime()
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+          return diffDays <= 35 && diffDays > 0
+        }
+        const statusVigencia = getStatusVigencia(contract.fecha_fin)
+        return filterVigencia === statusVigencia
+      })()
+
+      const matchesCompany = filterCompanyId === '' || contract.empresa_final_id === filterCompanyId
+
+      const matchesOnboarding = (() => {
+        if (filterOnboarding === 'all') return true
+        const progress = contract.contracts_onboarding_progress || 0
+        if (filterOnboarding === 'iniciado') return progress > 0 && progress < 100
+        if (filterOnboarding === 'completo') return progress === 100
+        return progress === 0
+      })()
+
+      const matchesResponsable = filterResponsable === 'all' || contract.responsable_contratacion_id === filterResponsable
+
+      return matchesSearch && matchesEmpresa && matchesAprobacion && matchesVigencia && matchesCompany && matchesOnboarding && matchesResponsable
+    })
+
+    // Preparar datos para CSV
+    const formatDate = (date: string | null | undefined) => {
+      if (!date) return ''
+      try {
+        const d = new Date(date)
+        return d.toLocaleDateString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      } catch {
+        return date
+      }
+    }
+
+    const formatBoolean = (value: boolean | null | undefined) => {
+      if (value === true) return 'Sí'
+      if (value === false) return 'No'
+      return ''
+    }
+
+    const headers = [
+      'Empleado',
+      'Tipo Identificación',
+      'Número Identificación',
+      'Empresa Cliente',
+      'Empresa Interna',
+      'Cargo',
+      'Fecha Ingreso',
+      'Responsable',
+      'Progreso Onboarding (%)',
+      'Programación Cita Exámenes',
+      'Exámenes',
+      'Fecha Exámenes',
+      'Envío Contrato',
+      'Contrato Firmado',
+      'Fecha Confirmación Contrato',
+      'Solicitud ARL',
+      'ARL',
+      'Fecha Confirmación ARL',
+      'Solicitud EPS',
+      'EPS',
+      'Fecha Confirmación EPS',
+      'Envío Inscripción Caja',
+      'Caja de Compensación',
+      'Fecha Confirmación Caja',
+      'Solicitud Cesantías',
+      'Fondo Cesantías',
+      'Fecha Confirmación Cesantías',
+      'Solicitud Pensión',
+      'Fondo Pensión',
+      'Fecha Confirmación Pensión',
+      'Estado Aprobación',
+      'Estado Vigencia'
+    ]
+
+    const rows = filtered.map(contract => {
+      const fullName = contract.contracts_full_name || `${contract.primer_nombre} ${contract.primer_apellido} ${contract.segundo_apellido || ''}`.trim()
+      const statusConfig = getContractStatusConfig(contract)
+      const statusVigencia = getStatusVigencia(contract.fecha_fin)
+
+      return [
+        fullName,
+        contract.tipo_identificacion || '',
+        contract.numero_identificacion || '',
+        contract.company?.name || '',
+        contract.empresa_interna || '',
+        contract.cargo || '',
+        formatDate(contract.fecha_ingreso),
+        contract.responsable_contratacion_handle || 'Sin asignar',
+        `${contract.contracts_onboarding_progress || 0}%`,
+        formatBoolean(contract.programacion_cita_examenes),
+        formatBoolean(contract.examenes),
+        formatDate(contract.examenes_fecha),
+        formatBoolean(contract.envio_contrato),
+        formatBoolean(contract.recibido_contrato_firmado),
+        formatDate(contract.contrato_fecha_confirmacion),
+        formatBoolean(contract.solicitud_inscripcion_arl),
+        contract.arl_nombre || '',
+        formatDate(contract.arl_fecha_confirmacion),
+        formatBoolean(contract.solicitud_eps),
+        contract.radicado_eps || '',
+        formatDate(contract.eps_fecha_confirmacion),
+        formatBoolean(contract.envio_inscripcion_caja),
+        contract.radicado_ccf || '',
+        formatDate(contract.caja_fecha_confirmacion),
+        formatBoolean(contract.solicitud_cesantias),
+        contract.fondo_cesantias || '',
+        formatDate(contract.cesantias_fecha_confirmacion),
+        formatBoolean(contract.solicitud_fondo_pension),
+        contract.fondo_pension || '',
+        formatDate(contract.pension_fecha_confirmacion),
+        statusConfig.status_aprobacion || '',
+        statusVigencia || ''
+      ]
+    })
+
+    // Crear CSV
+    const escapeCSV = (value: string) => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`
+      }
+      return value
+    }
+
+    const csvContent = [
+      headers.map(escapeCSV).join(','),
+      ...rows.map(row => row.map(cell => escapeCSV(String(cell || ''))).join(','))
+    ].join('\n')
+
+    // Descargar archivo
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `personas_onboarding_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setToastType('success')
+    setToastMsg(`Se exportaron ${filtered.length} registros exitosamente`)
+    setToastOpen(true)
+  }
+
   // Mostrar loading mientras los permisos cargan
   if (permissionsLoading) {
     return (
@@ -528,6 +723,16 @@ export default function ContratacionPage() {
             Crear nuevos contratos y seguir el proceso de onboarding hasta completar todos los pasos
           </p>
         </div>
+        {canEditResponsable && (
+          <button
+            onClick={handleExportToCSV}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-[#0A6A6A] to-[#5FD3D2] text-white rounded-lg font-medium hover:from-[#065C5C] hover:to-[#0A6A6A] transition-all duration-200 shadow-md hover:shadow-lg"
+            title="Descargar listado de personas en onboarding (CSV)"
+          >
+            <Download className="h-5 w-5" />
+            <span>Descargar Listado</span>
+          </button>
+        )}
       </div>
 
       {/* Filtros Inteligentes */}
