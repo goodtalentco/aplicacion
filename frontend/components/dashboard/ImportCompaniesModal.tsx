@@ -235,8 +235,14 @@ export default function ImportCompaniesModal({
     setImportResult(null)
 
     try {
-      // Leer archivo
+      // Leer archivo como UTF-8 explícitamente
       const text = await selectedFile.text()
+      
+      // Verificar si hay problemas de codificación comunes (caracteres extraños)
+      const hasEncodingIssues = /[]/.test(text) || /[\uFFFD]/.test(text)
+      if (hasEncodingIssues) {
+        alert('⚠️ Advertencia: El archivo puede tener problemas de codificación. Por favor, guarda el CSV en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"')
+      }
       
       // Parsear CSV
       const parsed = parseCSV(text)
@@ -439,6 +445,7 @@ export default function ImportCompaniesModal({
                       <li>Completa los datos de las empresas siguiendo el formato</li>
                       <li>Las columnas requeridas son: nombre_empresa, nit, contacto_cuentas_nombre, contacto_cuentas_email, contacto_cuentas_telefono</li>
                       <li>El sistema validará los datos antes de importar</li>
+                      <li><strong>Caracteres especiales (tildes, ñ):</strong> Guarda el archivo en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"</li>
                     </ul>
                   </div>
                 </div>

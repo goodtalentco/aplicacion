@@ -61,7 +61,11 @@ Empresa Ejemplo S.A.,800987654-3,,Carlos Rodríguez,crodriguez@ejemplo.com,+57 3
    - No elimines la primera fila (encabezados)
    - Cada fila después de los encabezados es una empresa
 
-6. **Codificación**: Guarda el archivo en formato UTF-8 para caracteres especiales (ñ, acentos, etc.)
+6. **Codificación (IMPORTANTE)**: 
+   - Guarda el archivo en formato **UTF-8** para caracteres especiales (ñ, acentos, etc.)
+   - En **Excel**: "Archivo" → "Guardar como" → Selecciona "CSV UTF-8 (delimitado por comas) (*.csv)"
+   - En **Google Sheets**: "Archivo" → "Descargar" → "Valores separados por comas (.csv, actual)" (ya viene en UTF-8)
+   - Si guardas con codificación incorrecta, los caracteres especiales aparecerán como símbolos extraños ()
 
 ## 🚀 Proceso de Importación
 

@@ -402,7 +402,15 @@ export default function ImportContractsModal({
     setImportResult(null)
 
     try {
+      // Leer archivo como UTF-8 explícitamente
       const text = await selectedFile.text()
+      
+      // Verificar si hay problemas de codificación comunes (caracteres extraños)
+      const hasEncodingIssues = /[]/.test(text) || /[\uFFFD]/.test(text)
+      if (hasEncodingIssues) {
+        alert('⚠️ Advertencia: El archivo puede tener problemas de codificación. Por favor, guarda el CSV en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"')
+      }
+      
       const parsed = parseCSV(text)
       setParsedData(parsed)
 
@@ -712,6 +720,7 @@ export default function ImportContractsModal({
                       <li>Los contratos importados se marcarán automáticamente con onboarding 100% completo</li>
                       <li>Las columnas requeridas son: primer_nombre, primer_apellido, tipo_identificacion, numero_identificacion, fecha_nacimiento, empresa_interna, empresa_final_nit, fecha_ingreso</li>
                       <li><strong>Formato de fechas:</strong> DD/MM/YYYY o DD-MM-YYYY (ejemplo: 15/01/2024 o 15-01-2024)</li>
+                      <li><strong>Caracteres especiales (tildes, ñ):</strong> Guarda el archivo en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"</li>
                     </ul>
                   </div>
                 </div>
