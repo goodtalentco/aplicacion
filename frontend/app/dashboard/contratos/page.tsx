@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FileText, Plus } from 'lucide-react'
+import { FileText, Plus, Upload, Download } from 'lucide-react'
 import { supabase } from '../../../lib/supabaseClient'
 import { usePermissions } from '../../../lib/usePermissions'
 import ContractModal from '../../../components/dashboard/ContractModal'
+import ImportContractsModal from '../../../components/dashboard/ImportContractsModal'
 import ContractsTable from '../../../components/dashboard/ContractsTable'
 import ContractsFilters, { FilterEmpresa, FilterAprobacion, FilterVigencia, FilterOnboarding } from '../../../components/dashboard/ContractsFilters'
 import Toast from '../../../components/dashboard/Toast'
@@ -35,6 +36,7 @@ export default function ContratosPage() {
   // Filtro de onboarding removido - no aplica para módulo de Contratos
   const [filterResponsable, setFilterResponsable] = useState<string>('all')
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [editingContract, setEditingContract] = useState<Contract | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'existing_employee'>('create')
   const [toastOpen, setToastOpen] = useState(false)
@@ -445,6 +447,16 @@ export default function ContratosPage() {
     }, 100)
   }
 
+  const handleDownloadTemplate = () => {
+    // Crear enlace temporal para descargar la plantilla
+    const link = document.createElement('a')
+    link.href = '/plantilla-importacion-contratos.csv'
+    link.download = 'plantilla-importacion-contratos.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   // Mostrar loading mientras los permisos cargan
   if (permissionsLoading) {
     return (
@@ -487,6 +499,29 @@ export default function ContratosPage() {
           <p className="text-gray-600 mt-2">
             Gestión de empleados oficiales y contratos activos
           </p>
+        </div>
+        
+        <div className="flex space-x-3">
+          {canCreate && (
+            <>
+              <button
+                onClick={handleDownloadTemplate}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                title="Descargar plantilla CSV para importación masiva"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Descargar Plantilla</span>
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-2 border border-[#004C4C] text-[#004C4C] rounded-xl hover:bg-[#004C4C] hover:text-white transition-colors flex items-center space-x-2"
+                title="Importar contratos desde archivo CSV"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Importar</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -588,6 +623,22 @@ export default function ContratosPage() {
         contract={editingContract}
         mode={modalMode}
         companies={companies}
+      />
+
+      {/* Import Contracts Modal */}
+      <ImportContractsModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          setShowImportModal(false)
+          setToastType('success')
+          setToastMsg('Contratos importados exitosamente')
+          setToastOpen(true)
+          localStorage.removeItem('contracts_cache_v3')
+          setDataLoaded(false)
+          setRefreshTrigger(prev => prev + 1)
+          loadContracts()
+        }}
       />
 
       {/* Floating Action Button móvil */}
