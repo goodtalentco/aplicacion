@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Building2, Plus, Search, Filter, Archive, X } from 'lucide-react'
+import { Building2, Plus, Search, Filter, Archive, X, Download, Upload } from 'lucide-react'
 import { supabase } from '../../../lib/supabaseClient'
 import { usePermissions } from '../../../lib/usePermissions'
 import CompanyModal from '../../../components/dashboard/CompanyModal'
 import CompanyCard from '../../../components/dashboard/CompanyCard'
+import ImportCompaniesModal from '../../../components/dashboard/ImportCompaniesModal'
 import Toast from '../../../components/dashboard/Toast'
 
 interface Company {
@@ -55,6 +56,7 @@ export default function EmpresasPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [showModal, setShowModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [editingCompany, setEditingCompany] = useState<Company | null>(null)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [toastOpen, setToastOpen] = useState(false)
@@ -218,6 +220,16 @@ export default function EmpresasPage() {
     loadCompanies()
   }
 
+  const handleDownloadTemplate = () => {
+    // Crear enlace temporal para descargar la plantilla
+    const link = document.createElement('a')
+    link.href = '/plantilla-importacion-empresas.csv'
+    link.download = 'plantilla-importacion-empresas.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   // Mostrar loading mientras los permisos cargan
   if (permissionsLoading) {
     return (
@@ -267,7 +279,36 @@ export default function EmpresasPage() {
           </div>
         </div>
         
-        <div className="flex space-x-3" />
+        <div className="flex space-x-3">
+          {canCreate && (
+            <>
+              <button
+                onClick={handleDownloadTemplate}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                title="Descargar plantilla CSV para importación masiva"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Descargar Plantilla</span>
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="px-4 py-2 border border-[#004C4C] text-[#004C4C] rounded-xl hover:bg-[#004C4C] hover:text-white transition-colors flex items-center space-x-2"
+                title="Importar empresas desde archivo CSV"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Importar</span>
+              </button>
+              <button
+                onClick={handleCreateNew}
+                className="px-4 py-2 bg-gradient-to-r from-[#004C4C] to-[#065C5C] text-white rounded-xl hover:from-[#065C5C] hover:to-[#0A6A6A] transition-all duration-200 flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nueva Empresa</span>
+                <span className="sm:hidden">Nueva</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -396,6 +437,19 @@ export default function EmpresasPage() {
         onSuccess={handleModalSuccess}
         company={editingCompany}
         mode={modalMode}
+      />
+
+      {/* Import Companies Modal */}
+      <ImportCompaniesModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
+          setShowImportModal(false)
+          setToastType('success')
+          setToastMsg('Empresas importadas exitosamente')
+          setToastOpen(true)
+          loadCompanies()
+        }}
       />
 
       {/* Floating Action Button móvil */}

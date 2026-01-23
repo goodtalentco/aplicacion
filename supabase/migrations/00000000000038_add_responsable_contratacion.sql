@@ -6,7 +6,7 @@
 -- ===============================================
 
 -- ===============================================
--- 1. AGREGAR CAMPO responsable_contratacion_id A CONTRACTSs
+-- 1. AGREGAR CAMPO responsable_contratacion_id A CONTRACTS
 -- ===============================================
 
 -- Agregar columna responsable_contratacion_id (FK a auth.users)
