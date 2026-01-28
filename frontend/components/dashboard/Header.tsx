@@ -10,7 +10,6 @@ import {
   LogOut, 
   User as UserIcon,
   ChevronDown,
-  Users,
   Settings,
   Database
 } from 'lucide-react'
@@ -82,11 +81,6 @@ export default function Header() {
       // Fallback: forzar redirect
       window.location.href = '/'
     }
-  }
-
-  const handleUserManagement = () => {
-    setShowUserMenu(false)
-    router.push('/dashboard/gestion-usuarios')
   }
 
   const handleAuxiliaryTables = () => {
@@ -161,16 +155,6 @@ export default function Header() {
                 <div className="py-2">
                   {(canManageUsers() || canManageAuxTables()) && (
                     <>
-                      {canManageUsers() && (
-                        <button
-                          onClick={handleUserManagement}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          <Users className="h-4 w-4 mr-3" />
-                          Gestión de usuarios
-                        </button>
-                      )}
-                      
                       {canManageAuxTables() && (
                         <button
                           onClick={handleAuxiliaryTables}

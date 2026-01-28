@@ -29,9 +29,11 @@ import {
   Bell,
   FileText,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Users
 } from 'lucide-react'
 import NotificationModal from '@/components/dashboard/NotificationModal'
+import GestionUsuariosContent from '@/components/dashboard/GestionUsuariosContent'
 import { formatDateColombia } from '@/utils/dateUtils'
 
 interface DailySummaryConfig {
@@ -98,6 +100,8 @@ export default function ConfiguracionPage() {
   const [expirationSaving, setExpirationSaving] = useState(false)
   const [expirationSending, setExpirationSending] = useState(false)
   const [expirationExpanded, setExpirationExpanded] = useState(false)
+  
+  const [usersExpanded, setUsersExpanded] = useState(false)
   
   const [loading, setLoading] = useState(true)
   
@@ -1139,6 +1143,38 @@ export default function ConfiguracionPage() {
                   )}
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tarjeta 3: Gestión de Usuarios */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
+          <div className="bg-gradient-to-r from-[#065C5C] to-[#0A6A6A] p-6 text-white relative overflow-hidden">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <Users className="w-8 h-8" />
+                <button
+                  onClick={() => setUsersExpanded(!usersExpanded)}
+                  className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                >
+                  {usersExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Gestión de Usuarios</h3>
+              <p className="text-sm opacity-90 mb-3">
+                Administra usuarios y sus permisos en el sistema
+              </p>
+            </div>
+            <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
+          </div>
+          {usersExpanded && (
+            <div className="p-6 border-t border-gray-200">
+              <GestionUsuariosContent embedded />
             </div>
           )}
         </div>
