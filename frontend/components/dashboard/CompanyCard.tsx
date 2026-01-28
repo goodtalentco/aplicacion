@@ -9,6 +9,7 @@ interface Company {
   id: string
   name: string
   tax_id: string
+  organizacion?: 'Good' | 'CPS'
   grupo_empresarial_id?: string
   grupo_empresarial?: {
     id: string
@@ -128,8 +129,15 @@ export default function CompanyCard({
     <>
       <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 relative overflow-hidden flex flex-col h-full min-h-[520px]`}>
         
-        {/* Status Badge */}
-        <div className="absolute top-4 right-4">
+        {/* Organización y Estado */}
+        <div className="absolute top-4 right-4 flex flex-col sm:flex-row items-end gap-1 sm:gap-2">
+          {company.organizacion && (
+            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+              company.organizacion === 'Good' ? 'bg-[#87E0E0]/30 text-[#004C4C]' : 'bg-amber-100 text-amber-800'
+            }`}>
+              {company.organizacion}
+            </span>
+          )}
           {isArchived ? (
             <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
               Archivada

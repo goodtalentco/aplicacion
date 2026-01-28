@@ -13,6 +13,7 @@ interface Company {
   id: string
   name: string
   tax_id: string
+  organizacion?: 'Good' | 'CPS'
   grupo_empresarial_id?: string
   grupo_empresarial?: {
     id: string
@@ -55,6 +56,7 @@ export default function EmpresasPage() {
   const [dataLoaded, setDataLoaded] = useState(false) // Track if data was loaded before
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [filterOrganizacion, setFilterOrganizacion] = useState<'all' | 'Good' | 'CPS'>('all')
   const [showModal, setShowModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [editingCompany, setEditingCompany] = useState<Company | null>(null)
@@ -349,8 +351,17 @@ export default function EmpresasPage() {
                 <option value="archived">Archivadas</option>
               </select>
             </div>
+            <select 
+              value={filterOrganizacion}
+              onChange={(e) => setFilterOrganizacion(e.target.value as 'all' | 'Good' | 'CPS')}
+              className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent"
+            >
+              <option value="all">Todas las organizaciones</option>
+              <option value="Good">Good</option>
+              <option value="CPS">CPS</option>
+            </select>
             <button
-              onClick={() => { setSearchTerm(''); setFilterStatus('all') }}
+              onClick={() => { setSearchTerm(''); setFilterStatus('all'); setFilterOrganizacion('all') }}
               className="px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
             >
               Limpiar

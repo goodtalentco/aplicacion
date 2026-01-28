@@ -19,8 +19,10 @@ import {
   Target,
   ArrowRight,
   Database,
-  Calculator
+  Calculator,
+  Download
 } from 'lucide-react'
+import { downloadAllAuxiliaryTablesForImport } from '@/utils/downloadAuxiliaryTable'
 
 interface TableMetrics {
   ciudades: number
@@ -67,6 +69,19 @@ export default function TablesAuxiliariesPage() {
       router.push('/dashboard')
     }
   }, [hasAccessPermission, permissionsLoading, router])
+
+  const handleDownloadAll = async () => {
+    try {
+      setLoading(true)
+      await downloadAllAuxiliaryTablesForImport()
+      alert('✅ Todas las tablas auxiliares han sido descargadas exitosamente en formato Excel')
+    } catch (error) {
+      alert('❌ Error al descargar las tablas auxiliares')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Cargar métricas de cada tabla
   useEffect(() => {
@@ -215,7 +230,16 @@ export default function TablesAuxiliariesPage() {
               Gestiona las tablas administrativas del sistema
             </p>
           </div>
-          
+          <button
+            onClick={handleDownloadAll}
+            disabled={loading}
+            className="px-4 py-2 bg-[#004C4C] text-white rounded-xl hover:bg-[#065C5C] transition-colors flex items-center space-x-2 disabled:opacity-50"
+            title="Descargar todas las tablas auxiliares en formato Excel para importación masiva"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Descargar Todas (Excel)</span>
+            <span className="sm:hidden">Descargar Todas</span>
+          </button>
         </div>
       </div>
 

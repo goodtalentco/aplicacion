@@ -9,7 +9,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePermissions } from '@/lib/usePermissions'
 import { supabase } from '@/lib/supabaseClient'
-import { Shield, ArrowLeft, Power, PowerOff } from 'lucide-react'
+import { Shield, ArrowLeft, Power, PowerOff, Download } from 'lucide-react'
+import { downloadAuxiliaryTableExcel } from '@/utils/downloadAuxiliaryTable'
 import AuxiliaryDataTable from '@/components/ui/AuxiliaryDataTable'
 import AuxiliaryTableModal from '@/components/ui/AuxiliaryTableModal'
 import ActivateDeactivateModal from '@/components/ui/ActivateDeactivateModal'
@@ -185,6 +186,20 @@ export default function ARLsPage() {
   }
 
   // Activar/Desactivar ARL
+  const handleDownload = async () => {
+    try {
+      await downloadAuxiliaryTableExcel({
+        tableName: 'arls',
+        fileName: 'arls',
+        columns: ['nombre'],
+        filterActive: true
+      })
+      showToast('Archivo Excel de ARLs descargado exitosamente', 'success')
+    } catch (error) {
+      showToast('Error al descargar el archivo', 'error')
+    }
+  }
+
   const handleActivateDeactivate = async () => {
     if (!selectedRecord) return
 
@@ -296,6 +311,14 @@ export default function ARLsPage() {
               </p>
             </div>
           </div>
+          <button
+            onClick={handleDownload}
+            className="px-4 py-2 border border-[#004C4C] text-[#004C4C] rounded-xl hover:bg-[#004C4C] hover:text-white transition-colors flex items-center space-x-2"
+            title="Descargar lista de ARLs en formato Excel"
+          >
+            <Download className="h-4 w-4" />
+            <span>Descargar Excel</span>
+          </button>
         </div>
       </div>
 

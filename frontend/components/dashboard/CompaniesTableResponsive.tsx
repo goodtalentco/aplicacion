@@ -21,6 +21,7 @@ interface Company {
   id: string
   name: string
   tax_id: string
+  organizacion?: 'Good' | 'CPS'
   accounts_contact_name: string
   accounts_contact_email: string
   accounts_contact_phone: string
@@ -70,7 +71,16 @@ export default function CompaniesTableResponsive({
           <Building2 className="w-4 h-4 text-gray-400 mr-2" />
           <div>
             <div className="font-medium text-gray-900">{value}</div>
-            <div className="text-xs text-gray-500">NIT: {record.tax_id}</div>
+            <div className="text-xs text-gray-500 flex items-center gap-2">
+              <span>NIT: {record.tax_id}</span>
+              {record.organizacion && (
+                <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
+                  record.organizacion === 'Good' ? 'bg-[#87E0E0]/30 text-[#004C4C]' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {record.organizacion}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )

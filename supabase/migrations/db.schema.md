@@ -160,6 +160,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `id` | UUID (PK) | Identificador único | `550e8400-e29b-41d4-a716-446655440000` |
 | `name` | TEXT | Nombre de la empresa cliente | `Good Temporal` |
 | `tax_id` | TEXT | NIT o identificación tributaria | `900123456` |
+| `organizacion` | TEXT | Organización interna del cliente: Good o CPS | `Good`, `CPS` |
 | `grupo_empresarial_id` | UUID (FK) | Grupo empresarial al que pertenece (opcional) | `grupo-uuid` |
 | `accounts_contact_name` | TEXT | Nombre del contacto de cuentas por cobrar | `María Pérez` |
 | `accounts_contact_email` | TEXT | Email del contacto de cuentas por cobrar | `mperez@good.com` |
@@ -180,12 +181,14 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 
 **Restricciones:**
 - `UNIQUE(tax_id)` - NIT único por empresa
+- `organizacion` - CHECK (organizacion IN ('Good', 'CPS'))
 - Validación de email en `accounts_contact_email`
 - Lógica de archivado: si `archived_at` no es NULL, `archived_by` debe tener valor
 
 **Índices:**
 - `idx_companies_name` - Búsqueda por nombre
 - `idx_companies_tax_id` - Búsqueda por NIT
+- `idx_companies_organizacion` - Filtro por organización (Good/CPS)
 - `idx_companies_status` - Filtro por estado
 - `idx_companies_archived_at` - Empresas no archivadas
 

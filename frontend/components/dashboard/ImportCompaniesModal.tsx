@@ -14,6 +14,7 @@ interface ParsedCompany {
   row: number
   nombre_empresa: string
   nit: string
+  organizacion: string
   grupo_empresarial?: string
   contacto_cuentas_nombre: string
   contacto_cuentas_email: string
@@ -93,6 +94,7 @@ export default function ImportCompaniesModal({
     const requiredHeaders = [
       'nombre_empresa',
       'nit',
+      'organizacion',
       'contacto_cuentas_nombre',
       'contacto_cuentas_email',
       'contacto_cuentas_telefono'
@@ -355,6 +357,7 @@ export default function ImportCompaniesModal({
 
           // Determinar estado
           const status = company.estado?.toLowerCase() === 'inactiva' ? false : true
+          const organizacion = (company.organizacion?.trim() === 'CPS' ? 'CPS' : 'Good') as 'Good' | 'CPS'
 
           // Crear empresa
           const { data: newCompany, error } = await supabase
@@ -362,6 +365,7 @@ export default function ImportCompaniesModal({
             .insert([{
               name: company.nombre_empresa.trim(),
               tax_id: company.nit.replace(/\D/g, ''),
+              organizacion,
               grupo_empresarial_id: grupoId,
               accounts_contact_name: company.contacto_cuentas_nombre.trim(),
               accounts_contact_email: company.contacto_cuentas_email.trim().toLowerCase(),
@@ -443,7 +447,7 @@ export default function ImportCompaniesModal({
                     <ul className="list-disc list-inside space-y-1">
                       <li>Descarga la plantilla CSV desde el botón "Descargar Plantilla"</li>
                       <li>Completa los datos de las empresas siguiendo el formato</li>
-                      <li>Las columnas requeridas son: nombre_empresa, nit, contacto_cuentas_nombre, contacto_cuentas_email, contacto_cuentas_telefono</li>
+                      <li>Las columnas requeridas son: nombre_empresa, nit, organizacion (Good o CPS), contacto_cuentas_nombre, contacto_cuentas_email, contacto_cuentas_telefono</li>
                       <li>El sistema validará los datos antes de importar</li>
                       <li><strong>Caracteres especiales (tildes, ñ):</strong> Guarda el archivo en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"</li>
                     </ul>
@@ -522,6 +526,7 @@ export default function ImportCompaniesModal({
                         <th className="text-left p-2">Fila</th>
                         <th className="text-left p-2">Empresa</th>
                         <th className="text-left p-2">NIT</th>
+                        <th className="text-left p-2">Organización</th>
                         <th className="text-left p-2">Contacto Cuentas</th>
                       </tr>
                     </thead>
@@ -531,6 +536,7 @@ export default function ImportCompaniesModal({
                           <td className="p-2">{company.row}</td>
                           <td className="p-2">{company.nombre_empresa}</td>
                           <td className="p-2">{company.nit}</td>
+                          <td className="p-2">{company.organizacion || '—'}</td>
                           <td className="p-2">{company.contacto_cuentas_nombre}</td>
                         </tr>
                       ))}

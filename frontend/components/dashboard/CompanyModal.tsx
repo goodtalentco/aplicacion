@@ -6,10 +6,13 @@ import { supabase } from '../../lib/supabaseClient'
 import ARLSection from './ARLSection'
 import CajasSection from './CajasSection'
 
+type Organizacion = 'Good' | 'CPS'
+
 interface Company {
   id?: string
   name: string
   tax_id: string
+  organizacion?: Organizacion
   grupo_empresarial_id?: string
   accounts_contact_name?: string
   accounts_contact_email?: string
@@ -57,6 +60,7 @@ export default function CompanyModal({
   const [formData, setFormData] = useState<Company>({
     name: '',
     tax_id: '',
+    organizacion: undefined,
     grupo_empresarial_id: '',
     accounts_contact_name: '',
     accounts_contact_email: '',
@@ -227,6 +231,7 @@ export default function CompanyModal({
         // En modo edición, inicializar todo de una vez
         setFormData({
           ...company,
+          organizacion: (company as Company & { organizacion?: Organizacion }).organizacion || undefined,
           grupo_empresarial_id: company.grupo_empresarial_id || '',
           accounts_contact_name: company.accounts_contact_name || '',
           accounts_contact_email: company.accounts_contact_email || '',
@@ -268,6 +273,7 @@ export default function CompanyModal({
       setFormData({
         name: '',
         tax_id: '',
+        organizacion: undefined,
         grupo_empresarial_id: '',
         accounts_contact_name: '',
         accounts_contact_email: '',
@@ -472,8 +478,12 @@ export default function CompanyModal({
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     
+    if (!formData.organizacion || (formData.organizacion !== 'Good' && formData.organizacion !== 'CPS')) {
+      newErrors.organizacion = 'Selecciona la organización (Good o CPS)'
+    }
+    
     Object.entries(formData).forEach(([key, value]) => {
-      if (key !== 'status') {
+      if (key !== 'status' && key !== 'organizacion') {
         const error = validateField(key, value)
         if (error) newErrors[key] = error
       }
@@ -554,6 +564,7 @@ export default function CompanyModal({
           .update({
             name: formData.name.trim(),
             tax_id: formData.tax_id.replace(/\D/g, ''),
+            organizacion: formData.organizacion!,
             grupo_empresarial_id: grupoEmpresarialId,
             accounts_contact_name: formData.accounts_contact_name?.trim() || null,
             accounts_contact_email: formData.accounts_contact_email?.trim().toLowerCase() || null,
@@ -715,6 +726,33 @@ export default function CompanyModal({
                     />
                     {errors.tax_id && (
                       <p className="mt-1 text-sm text-red-600">{errors.tax_id}</p>
+                    )}
+                  </div>
+
+                  {/* Organización */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Organización *
+                    </label>
+                    <select
+                      name="organizacion"
+                      value={formData.organizacion || ''}
+                      onChange={(e) => {
+                        const v = e.target.value as Organizacion | ''
+                        setFormData(prev => ({ ...prev, organizacion: v === '' ? undefined : v }))
+                        setErrors(prev => ({ ...prev, organizacion: '' }))
+                      }}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-[#87E0E0] focus:border-[#87E0E0] transition-colors text-sm ${
+                        errors.organizacion ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                      }`}
+                      required
+                    >
+                      <option value="">Selecciona la organización</option>
+                      <option value="Good">Good</option>
+                      <option value="CPS">CPS</option>
+                    </select>
+                    {errors.organizacion && (
+                      <p className="mt-1 text-sm text-red-600">{errors.organizacion}</p>
                     )}
                   </div>
 
