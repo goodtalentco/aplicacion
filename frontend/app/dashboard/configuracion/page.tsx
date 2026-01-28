@@ -30,10 +30,12 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  Users
+  Users,
+  Database
 } from 'lucide-react'
 import NotificationModal from '@/components/dashboard/NotificationModal'
 import GestionUsuariosContent from '@/components/dashboard/GestionUsuariosContent'
+import TablasAuxiliaresContent from '@/components/dashboard/TablasAuxiliaresContent'
 import { formatDateColombia } from '@/utils/dateUtils'
 
 interface DailySummaryConfig {
@@ -75,7 +77,7 @@ const DAYS_OF_WEEK = [
 
 export default function ConfiguracionPage() {
   const router = useRouter()
-  const { canManageUsers, loading: permissionsLoading, permissions } = usePermissions()
+  const { canManageUsers, canManageAuxTables, loading: permissionsLoading, permissions } = usePermissions()
   
   // Estados para Resumen Diario
   const [dailyConfig, setDailyConfig] = useState<DailySummaryConfig | null>(null)
@@ -102,6 +104,7 @@ export default function ConfiguracionPage() {
   const [expirationExpanded, setExpirationExpanded] = useState(false)
   
   const [usersExpanded, setUsersExpanded] = useState(false)
+  const [tablasAuxiliaresExpanded, setTablasAuxiliaresExpanded] = useState(false)
   
   const [loading, setLoading] = useState(true)
   
@@ -117,7 +120,7 @@ export default function ConfiguracionPage() {
     type: 'info'
   })
 
-  const hasPermission = canManageUsers()
+  const hasPermission = canManageUsers() || canManageAuxTables()
 
   // Redirigir si no tiene permisos
   useEffect(() => {
@@ -126,12 +129,12 @@ export default function ConfiguracionPage() {
     }
   }, [hasPermission, permissionsLoading, router])
 
-  // Cargar configuraciones
+  // Cargar configuraciones (solo para usuarios que pueden gestionar notificaciones)
   useEffect(() => {
-    if (!permissionsLoading && permissions.length > 0 && hasPermission) {
+    if (!permissionsLoading && permissions.length > 0 && canManageUsers()) {
       loadConfigs()
     }
-  }, [permissionsLoading, permissions.length, hasPermission])
+  }, [permissionsLoading, permissions.length, canManageUsers])
 
   const loadConfigs = async () => {
     try {
@@ -548,7 +551,8 @@ export default function ConfiguracionPage() {
       {/* Grid de tarjetas de configuración */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Tarjeta 1: Resumen Diario de Contratación */}
+        {/* Tarjeta 1: Resumen Diario de Contratación - solo para canManageUsers */}
+        {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header con gradiente */}
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white relative overflow-hidden">
@@ -811,8 +815,10 @@ export default function ConfiguracionPage() {
             </div>
           )}
         </div>
+        )}
 
-        {/* Tarjeta 2: Notificaciones de Vencimiento */}
+        {/* Tarjeta 2: Notificaciones de Vencimiento - solo para canManageUsers */}
+        {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Header con gradiente */}
           <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white relative overflow-hidden">
@@ -1146,8 +1152,10 @@ export default function ConfiguracionPage() {
             </div>
           )}
         </div>
+        )}
 
-        {/* Tarjeta 3: Gestión de Usuarios */}
+        {/* Tarjeta 3: Gestión de Usuarios - solo para canManageUsers */}
+        {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
           <div className="bg-gradient-to-r from-[#065C5C] to-[#0A6A6A] p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
@@ -1178,6 +1186,41 @@ export default function ConfiguracionPage() {
             </div>
           )}
         </div>
+        )}
+
+        {/* Tarjeta 4: Tablas Auxiliares */}
+        {canManageAuxTables() && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
+            <div className="bg-gradient-to-r from-[#065C5C] to-[#0A6A6A] p-6 text-white relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <Database className="w-8 h-8" />
+                  <button
+                    onClick={() => setTablasAuxiliaresExpanded(!tablasAuxiliaresExpanded)}
+                    className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                  >
+                    {tablasAuxiliaresExpanded ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Tablas Auxiliares</h3>
+                <p className="text-sm opacity-90 mb-3">
+                  Gestiona las tablas administrativas del sistema (ciudades, cajas, ARL, fondos, EPS, etc.)
+                </p>
+              </div>
+              <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
+              <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
+            </div>
+            {tablasAuxiliaresExpanded && (
+              <div className="p-6 border-t border-gray-200">
+                <TablasAuxiliaresContent embedded />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Información Adicional */}

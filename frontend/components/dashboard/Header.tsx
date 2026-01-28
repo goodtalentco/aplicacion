@@ -10,8 +10,7 @@ import {
   LogOut, 
   User as UserIcon,
   ChevronDown,
-  Settings,
-  Database
+  Settings
 } from 'lucide-react'
 import ContractExpirationNotifications from './ContractExpirationNotifications'
 
@@ -83,11 +82,6 @@ export default function Header() {
     }
   }
 
-  const handleAuxiliaryTables = () => {
-    setShowUserMenu(false)
-    router.push('/dashboard/tablas-auxiliares')
-  }
-
   return (
     <header className="bg-gradient-to-r from-[#E6F5F7] via-white to-[#E6F5F7] border-b border-gray-200 shadow-sm">
       <div className="flex items-center justify-between px-4 lg:px-6 py-4">
@@ -155,16 +149,6 @@ export default function Header() {
                 <div className="py-2">
                   {(canManageUsers() || canManageAuxTables()) && (
                     <>
-                      {canManageAuxTables() && (
-                        <button
-                          onClick={handleAuxiliaryTables}
-                          className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          <Database className="h-4 w-4 mr-3" />
-                          Tablas auxiliares
-                        </button>
-                      )}
-                      
                       <button
                         onClick={() => router.push('/dashboard/configuracion')}
                         className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
