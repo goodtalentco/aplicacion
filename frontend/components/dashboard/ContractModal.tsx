@@ -1670,9 +1670,9 @@ export default function ContractModal({
                           validateDateInput(e.target.value, 'birth', true, true)
                         }
                       }}
+                      {...getInputProps('fecha_nacimiento', !!errors.fecha_nacimiento)}
                       disabled={!canEditResponsable}
                       readOnly={!canEditResponsable}
-                      {...getInputProps('fecha_nacimiento', !!errors.fecha_nacimiento)}
                     />
                     {!canEditResponsable && (
                       <p className="text-gray-500 text-xs mt-1">Solo usuarios con permiso de administrador de contratos pueden editar este campo.</p>
