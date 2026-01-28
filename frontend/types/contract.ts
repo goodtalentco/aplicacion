@@ -10,6 +10,7 @@ export interface Auxilio {
   tipo: 'salarial' | 'no_salarial'
   monto: number
   moneda?: string // Usa la moneda del salario si no se especifica
+  concepto?: string | null // Descripción o a qué corresponde el auxilio
 }
 
 export interface Contract {

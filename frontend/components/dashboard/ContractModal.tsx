@@ -51,6 +51,7 @@ export default function ContractModal({
   // Estados para el nuevo formulario de auxilios
   const [nuevoAuxilioTipo, setNuevoAuxilioTipo] = useState<'salarial' | 'no_salarial'>('salarial')
   const [nuevoAuxilioMonto, setNuevoAuxilioMonto] = useState('')
+  const [nuevoAuxilioConcepto, setNuevoAuxilioConcepto] = useState('')
   
   // Estados para cálculos automáticos - valores por defecto mientras cargan
   const [salarioMinimo, setSalarioMinimo] = useState<number>(1300000)
@@ -725,6 +726,7 @@ export default function ContractModal({
       // Limpiar estados del formulario de auxilios
       setNuevoAuxilioTipo('salarial')
       setNuevoAuxilioMonto('')
+      setNuevoAuxilioConcepto('')
     }
   }, [isOpen, contract, mode, companies])
 
@@ -1331,7 +1333,8 @@ export default function ContractModal({
           ? formData.auxilios.map(aux => ({
               tipo: aux.tipo,
               monto: aux.monto,
-              moneda: aux.moneda || formData.moneda || 'COP'
+              moneda: aux.moneda || formData.moneda || 'COP',
+              concepto: (typeof aux.concepto === 'string' && aux.concepto.trim()) ? aux.concepto.trim() : null
             }))
           : [],
         auxilio_transporte: formData.auxilio_transporte || null,
@@ -2199,68 +2202,84 @@ export default function ContractModal({
                     </label>
                     
                     {/* Fila para agregar auxilio */}
-                    <div className="flex items-end space-x-2 mb-3">
-                      {/* Selector de tipo */}
-                      <div className="flex-1">
-                        <select
-                          value={nuevoAuxilioTipo}
-                          onChange={(e) => !isReadOnly && setNuevoAuxilioTipo(e.target.value as 'salarial' | 'no_salarial')}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
-                          disabled={isReadOnly}
-                        >
-                          <option value="salarial">Auxilio Salarial</option>
-                          <option value="no_salarial">Auxilio No Salarial</option>
-                        </select>
-                      </div>
-                      
-                      {/* Campo de monto */}
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={nuevoAuxilioMonto}
-                          onChange={(e) => {
-                            if (!isReadOnly) {
-                              const numericValue = parseNumberFromDots(e.target.value)
-                              setNuevoAuxilioMonto(formatNumberWithDots(numericValue))
+                    <div className="space-y-2 mb-3">
+                      <div className="flex flex-wrap items-end gap-2">
+                        {/* Selector de tipo */}
+                        <div className="flex-1 min-w-[140px]">
+                          <select
+                            value={nuevoAuxilioTipo}
+                            onChange={(e) => !isReadOnly && setNuevoAuxilioTipo(e.target.value as 'salarial' | 'no_salarial')}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
+                            disabled={isReadOnly}
+                          >
+                            <option value="salarial">Auxilio Salarial</option>
+                            <option value="no_salarial">Auxilio No Salarial</option>
+                          </select>
+                        </div>
+                        
+                        {/* Campo "A qué corresponde" */}
+                        <div className="flex-[2] min-w-[160px]">
+                          <input
+                            type="text"
+                            value={nuevoAuxilioConcepto}
+                            onChange={(e) => !isReadOnly && setNuevoAuxilioConcepto(e.target.value)}
+                            placeholder="A qué corresponde (ej: bonificación, viático)"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                        
+                        {/* Campo de monto */}
+                        <div className="flex-1 min-w-[100px] relative">
+                          <input
+                            type="text"
+                            value={nuevoAuxilioMonto}
+                            onChange={(e) => {
+                              if (!isReadOnly) {
+                                const numericValue = parseNumberFromDots(e.target.value)
+                                setNuevoAuxilioMonto(formatNumberWithDots(numericValue))
+                              }
+                            }}
+                            placeholder="Ej: 150.000"
+                            className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
+                            disabled={isReadOnly}
+                          />
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                            <span className="text-sm font-medium text-gray-600">
+                              {formData.moneda === 'otro' && formData.moneda_custom 
+                                ? formData.moneda_custom 
+                                : (formData.moneda || 'COP')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Botón agregar */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isReadOnly && nuevoAuxilioMonto.trim()) {
+                              const monto = parseNumberFromDots(nuevoAuxilioMonto)
+                              if (monto > 0) {
+                                const nuevoAuxilio: Auxilio = {
+                                  tipo: nuevoAuxilioTipo,
+                                  monto: monto,
+                                  moneda: formData.moneda === 'otro' && formData.moneda_custom 
+                                    ? formData.moneda_custom 
+                                    : (formData.moneda || 'COP'),
+                                  concepto: nuevoAuxilioConcepto.trim() || undefined
+                                }
+                                handleInputChange('auxilios', [...(formData.auxilios || []), nuevoAuxilio])
+                                setNuevoAuxilioMonto('')
+                                setNuevoAuxilioConcepto('')
+                              }
                             }
                           }}
-                          placeholder="Ej: 150.000"
-                          className="w-full px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#87E0E0] focus:border-transparent text-sm"
-                          disabled={isReadOnly}
-                        />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                          <span className="text-sm font-medium text-gray-600">
-                            {formData.moneda === 'otro' && formData.moneda_custom 
-                              ? formData.moneda_custom 
-                              : (formData.moneda || 'COP')}
-                          </span>
-                        </div>
+                          disabled={isReadOnly || !nuevoAuxilioMonto.trim() || parseNumberFromDots(nuevoAuxilioMonto) <= 0}
+                          className="px-4 py-2 bg-[#004C4C] text-white rounded-lg hover:bg-[#065C5C] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                          Agregar
+                        </button>
                       </div>
-                      
-                      {/* Botón agregar */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!isReadOnly && nuevoAuxilioMonto.trim()) {
-                            const monto = parseNumberFromDots(nuevoAuxilioMonto)
-                            if (monto > 0) {
-                              const nuevoAuxilio: Auxilio = {
-                                tipo: nuevoAuxilioTipo,
-                                monto: monto,
-                                moneda: formData.moneda === 'otro' && formData.moneda_custom 
-                                  ? formData.moneda_custom 
-                                  : (formData.moneda || 'COP')
-                              }
-                              handleInputChange('auxilios', [...(formData.auxilios || []), nuevoAuxilio])
-                              setNuevoAuxilioMonto('')
-                            }
-                          }
-                        }}
-                        disabled={isReadOnly || !nuevoAuxilioMonto.trim() || parseNumberFromDots(nuevoAuxilioMonto) <= 0}
-                        className="px-4 py-2 bg-[#004C4C] text-white rounded-lg hover:bg-[#065C5C] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                      >
-                        Agregar
-                      </button>
                     </div>
                     
                     {/* Lista de auxilios agregados */}
@@ -2269,10 +2288,15 @@ export default function ContractModal({
                         <div className="space-y-2">
                           {formData.auxilios.map((auxilio, index) => (
                             <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-gray-200">
-                              <div className="flex items-center space-x-3 flex-1">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 flex-1 min-w-0">
                                 <span className="text-xs font-medium text-gray-700 min-w-[120px]">
                                   {auxilio.tipo === 'salarial' ? 'Auxilio Salarial' : 'Auxilio No Salarial'}
                                 </span>
+                                {auxilio.concepto && (
+                                  <span className="text-xs text-gray-600 italic">
+                                    {auxilio.concepto}
+                                  </span>
+                                )}
                                 <span className="text-sm font-semibold text-gray-900">
                                   {formatNumberWithDots(auxilio.monto)} {auxilio.moneda || formData.moneda || 'COP'}
                                 </span>
