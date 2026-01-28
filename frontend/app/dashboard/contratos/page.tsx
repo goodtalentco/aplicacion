@@ -668,6 +668,7 @@ export default function ContratosPage() {
         setFilterResponsable={setFilterResponsable}
         companies={companies}
         users={[]}
+        showBorradorAndCritico={false}
         stats={stats}
       />
 

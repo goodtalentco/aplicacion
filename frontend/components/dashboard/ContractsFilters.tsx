@@ -50,6 +50,7 @@ interface ContractsFiltersProps {
   setFilterResponsable: (filter: FilterResponsable) => void
   companies: CompanyFilter[]
   users?: UserFilter[] // Lista de usuarios para filtrar por responsable
+  showBorradorAndCritico?: boolean // Mostrar cuadros de Borrador y Crítico (default: true)
   stats: {
     total: number
     good: number
@@ -97,6 +98,7 @@ export default function ContractsFilters({
   setFilterResponsable,
   companies,
   users = [],
+  showBorradorAndCritico = true,
   stats
 }: ContractsFiltersProps) {
   const [companySearchTerm, setCompanySearchTerm] = useState('')
@@ -151,7 +153,7 @@ export default function ContractsFilters({
     <div className="space-y-4">
       
       {/* Quick Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${showBorradorAndCritico ? 'lg:grid-cols-8' : 'lg:grid-cols-6'}`}>
         
         {/* Total */}
         <div 
@@ -172,6 +174,28 @@ export default function ContractsFilters({
           </div>
           <p className="text-2xl font-bold mt-1">{stats.total}</p>
         </div>
+
+        {/* Borrador - Solo en módulo de Contratación */}
+        {showBorradorAndCritico && (
+          <div 
+            className={`p-3 rounded-xl cursor-pointer transition-all ${
+              filterAprobacion === 'borrador' 
+                ? 'bg-amber-500 text-white' 
+                : 'bg-amber-50 border border-amber-200 hover:border-amber-300'
+            }`}
+            onClick={() => setFilterAprobacion('borrador')}
+          >
+            <div className="flex items-center space-x-2">
+              <AlertCircle className={`h-4 w-4 ${filterAprobacion === 'borrador' ? 'text-white' : 'text-amber-600'}`} />
+              <span className={`text-sm font-medium ${filterAprobacion === 'borrador' ? 'text-white' : 'text-amber-800'}`}>
+                Borrador
+              </span>
+            </div>
+            <p className={`text-2xl font-bold mt-1 ${filterAprobacion === 'borrador' ? 'text-white' : 'text-amber-800'}`}>
+              {stats.borrador}
+            </p>
+          </div>
+        )}
 
         {/* Aprobado */}
         <div 
@@ -252,6 +276,28 @@ export default function ContractsFilters({
             {stats.terminado}
           </p>
         </div>
+
+        {/* Crítico - Solo en módulo de Contratación */}
+        {showBorradorAndCritico && (
+          <div 
+            className={`p-3 rounded-xl cursor-pointer transition-all ${
+              filterVigencia === 'critico' 
+                ? 'bg-red-700 text-white' 
+                : 'bg-red-50 border border-red-300 hover:border-red-400'
+            }`}
+            onClick={() => setFilterVigencia(filterVigencia === 'critico' ? 'all' : 'critico')}
+          >
+            <div className="flex items-center space-x-2">
+              <AlertCircle className={`h-4 w-4 ${filterVigencia === 'critico' ? 'text-white' : 'text-red-700'}`} />
+              <span className={`text-sm font-medium ${filterVigencia === 'critico' ? 'text-white' : 'text-red-900'}`}>
+                🔥 Crítico
+              </span>
+            </div>
+            <p className={`text-2xl font-bold mt-1 ${filterVigencia === 'critico' ? 'text-white' : 'text-red-900'}`}>
+              {stats.critico}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Filtros tradicionales */}
