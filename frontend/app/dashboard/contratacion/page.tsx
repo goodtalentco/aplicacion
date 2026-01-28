@@ -326,18 +326,18 @@ export default function ContratacionPage() {
       }
       
       if (filterVigencia === 'critico') {
-        if (contract.tipo_contrato !== 'fijo' || getStatusVigencia(contract.fecha_fin) !== 'activo') return false
-        if (!contract.fecha_fin) return false
+        // Crítico: personas que llevan más de una semana (7 días) en proceso de contratación
+        if (!contract.created_at) return false
         
-        const fechaFin = new Date(contract.fecha_fin)
+        const fechaCreacion = new Date(contract.created_at)
         const hoy = new Date()
         hoy.setHours(0, 0, 0, 0)
-        fechaFin.setHours(0, 0, 0, 0)
+        fechaCreacion.setHours(0, 0, 0, 0)
         
-        const diffTime = fechaFin.getTime() - hoy.getTime()
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        const diffTime = hoy.getTime() - fechaCreacion.getTime()
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
         
-        return diffDays <= 35 && diffDays > 0
+        return diffDays > 7  // Más de 7 días en proceso
       }
       
       const statusVigencia = getStatusVigencia(contract.fecha_fin)
@@ -418,18 +418,18 @@ export default function ContratacionPage() {
       return diffDays <= 45 && diffDays > 35
     }).length,
     critico: contracts.filter(c => {
-      if (c.tipo_contrato !== 'fijo' || getStatusVigencia(c.fecha_fin) !== 'activo') return false
-      if (!c.fecha_fin) return false
+      // Crítico: personas que llevan más de una semana (7 días) en proceso de contratación
+      if (!c.created_at) return false
       
-      const fechaFin = new Date(c.fecha_fin)
+      const fechaCreacion = new Date(c.created_at)
       const hoy = new Date()
       hoy.setHours(0, 0, 0, 0)
-      fechaFin.setHours(0, 0, 0, 0)
+      fechaCreacion.setHours(0, 0, 0, 0)
       
-      const diffTime = fechaFin.getTime() - hoy.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const diffTime = hoy.getTime() - fechaCreacion.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
       
-      return diffDays <= 35 && diffDays > 0
+      return diffDays > 7  // Más de 7 días en proceso
     }).length,
     terminado: contracts.filter(c => getStatusVigencia(c.fecha_fin) === 'terminado').length,
     
@@ -529,15 +529,15 @@ export default function ContratacionPage() {
           return diffDays <= 45 && diffDays > 35
         }
         if (filterVigencia === 'critico') {
-          if (contract.tipo_contrato !== 'fijo' || getStatusVigencia(contract.fecha_fin) !== 'activo') return false
-          if (!contract.fecha_fin) return false
-          const fechaFin = new Date(contract.fecha_fin)
+          // Crítico: personas que llevan más de una semana (7 días) en proceso de contratación
+          if (!contract.created_at) return false
+          const fechaCreacion = new Date(contract.created_at)
           const hoy = new Date()
           hoy.setHours(0, 0, 0, 0)
-          fechaFin.setHours(0, 0, 0, 0)
-          const diffTime = fechaFin.getTime() - hoy.getTime()
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          return diffDays <= 35 && diffDays > 0
+          fechaCreacion.setHours(0, 0, 0, 0)
+          const diffTime = hoy.getTime() - fechaCreacion.getTime()
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+          return diffDays > 7  // Más de 7 días en proceso
         }
         const statusVigencia = getStatusVigencia(contract.fecha_fin)
         return filterVigencia === statusVigencia
