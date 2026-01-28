@@ -1233,6 +1233,14 @@ export default function ContractsTable({
                           <span className="text-gray-500 text-xs font-medium">F. Nacimiento:</span>
                           <span className="text-gray-800">{formatDate(contract.fecha_nacimiento)}</span>
                         </div>
+                        <div className="flex flex-col">
+                          <span className="text-gray-500 text-xs font-medium">Responsable Contratación:</span>
+                          <span className="text-gray-800">
+                            {contract.responsable_contratacion_handle || contract.responsable_contratacion_id
+                              ? (contract.responsable_contratacion_handle || 'Usuario')
+                              : 'No asignado'}
+                          </span>
+                        </div>
                         {/* Campo género no disponible */}
                       </div>
                     </div>
