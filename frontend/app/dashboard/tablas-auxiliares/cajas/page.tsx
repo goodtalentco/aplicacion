@@ -229,7 +229,7 @@ export default function CajasPage() {
 
   const handleDownload = async () => {
     try {
-      await downloadAuxiliaryTableCSV({
+      await downloadAuxiliaryTableExcel({
         tableName: 'cajas_compensacion',
         fileName: 'cajas_compensacion',
         columns: ['nombre'],

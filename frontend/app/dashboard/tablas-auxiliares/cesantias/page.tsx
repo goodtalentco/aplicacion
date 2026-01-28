@@ -188,7 +188,7 @@ export default function CesantiasPage() {
   // Activar/Desactivar fondo
   const handleDownload = async () => {
     try {
-      await downloadAuxiliaryTableCSV({
+      await downloadAuxiliaryTableExcel({
         tableName: 'fondos_cesantias',
         fileName: 'fondos_cesantias',
         columns: ['nombre'],
