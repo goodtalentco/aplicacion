@@ -112,7 +112,6 @@ export default function ImportContractsModal({
       'primer_apellido',
       'tipo_identificacion',
       'numero_identificacion',
-      'fecha_nacimiento',
       'empresa_interna',
       'empresa_final_nit',
       'fecha_ingreso'
@@ -257,15 +256,8 @@ export default function ImportContractsModal({
         })
       }
 
-      // Validar fecha_nacimiento
-      if (!contract.fecha_nacimiento || contract.fecha_nacimiento.trim() === '') {
-        errors.push({
-          row: contract.row,
-          field: 'fecha_nacimiento',
-          message: 'La fecha de nacimiento es requerida',
-          empleado: nombreCompleto
-        })
-      } else {
+      // Validar fecha_nacimiento solo si se proporciona (es opcional)
+      if (contract.fecha_nacimiento && contract.fecha_nacimiento.trim() !== '') {
         const fechaNacISO = parseColombianDate(contract.fecha_nacimiento)
         if (!fechaNacISO) {
           errors.push({
@@ -557,8 +549,10 @@ export default function ImportContractsModal({
           // Preparar datos del contrato
           const fechaActual = new Date().toISOString().split('T')[0]
           
-          // Convertir fechas de formato colombiano a ISO
-          const fechaNacimientoISO = parseColombianDate(contract.fecha_nacimiento) || contract.fecha_nacimiento.trim()
+          // Convertir fechas de formato colombiano a ISO (fecha_nacimiento es opcional)
+          const fechaNacimientoISO = contract.fecha_nacimiento?.trim()
+            ? (parseColombianDate(contract.fecha_nacimiento) || contract.fecha_nacimiento.trim())
+            : null
           const fechaIngresoISO = parseColombianDate(contract.fecha_ingreso) || contract.fecha_ingreso.trim()
           const fechaExpedicionISO = contract.fecha_expedicion_documento 
             ? (parseColombianDate(contract.fecha_expedicion_documento) || contract.fecha_expedicion_documento.trim())
@@ -718,7 +712,7 @@ export default function ImportContractsModal({
                       <li>Descarga la plantilla CSV desde el botón "Descargar Plantilla"</li>
                       <li>Completa los datos de los empleados siguiendo el formato</li>
                       <li>Los contratos importados se marcarán automáticamente con onboarding 100% completo</li>
-                      <li>Las columnas requeridas son: primer_nombre, primer_apellido, tipo_identificacion, numero_identificacion, fecha_nacimiento, empresa_interna, empresa_final_nit, fecha_ingreso</li>
+                      <li>Las columnas requeridas son: primer_nombre, primer_apellido, tipo_identificacion, numero_identificacion, empresa_interna, empresa_final_nit, fecha_ingreso. La fecha_nacimiento es opcional.</li>
                       <li><strong>Formato de fechas:</strong> DD/MM/YYYY o DD-MM-YYYY (ejemplo: 15/01/2024 o 15-01-2024)</li>
                       <li><strong>Caracteres especiales (tildes, ñ):</strong> Guarda el archivo en formato UTF-8. En Excel: "Guardar como" → "CSV UTF-8 (delimitado por comas)"</li>
                     </ul>

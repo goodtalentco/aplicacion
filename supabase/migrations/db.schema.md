@@ -262,7 +262,7 @@ SELECT has_permission('usuario-123', 'companies', 'view');
 | `tipo_identificacion` | TEXT | Tipo de documento (texto libre) | `CC`, `Cédula de Ciudadanía` |
 | `numero_identificacion` | TEXT | Número de identificación | `1234567890` |
 | `fecha_expedicion_documento` | DATE | Fecha de expedición del documento | `2010-03-15` |
-| `fecha_nacimiento` | DATE | Fecha de nacimiento | `1990-05-15` |
+| `fecha_nacimiento` | DATE | Fecha de nacimiento (opcional; editable solo por usuarios con permiso contracts.admin) | `1990-05-15` o `NULL` |
 | `celular` | TEXT | Número de celular | `+57 300 123 4567` |
 | `email` | TEXT | Correo electrónico | `juan.perez@email.com` |
 | `empresa_interna` | TEXT | Empresa interna (texto libre) | `Good`, `Temporal`, `Outsourcing` |

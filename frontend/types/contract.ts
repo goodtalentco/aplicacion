@@ -21,7 +21,7 @@ export interface Contract {
   tipo_identificacion: string
   numero_identificacion: string
   fecha_expedicion_documento?: string | null
-  fecha_nacimiento: string
+  fecha_nacimiento?: string | null
   celular?: string | null
   email?: string | null
   empresa_interna: string

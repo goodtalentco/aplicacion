@@ -745,10 +745,7 @@ export default function ContractModal({
       newErrors.numero_identificacion = 'El número de identificación es obligatorio'
       errorsByTab[0].push('numero_identificacion')
     }
-    if (!formData.fecha_nacimiento) {
-      newErrors.fecha_nacimiento = 'La fecha de nacimiento es obligatoria'
-      errorsByTab[0].push('fecha_nacimiento')
-    }
+    // fecha_nacimiento es opcional; solo se valida formato si se ingresa (y solo admin puede editarla)
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'El email no tiene un formato válido'
       errorsByTab[0].push('email')
@@ -923,7 +920,7 @@ export default function ContractModal({
     const { errors } = validateAllFields()
     const currentTabErrors = Object.keys(errors).filter(field => {
       if (currentTab === 0) {
-        return ['primer_nombre', 'primer_apellido', 'numero_identificacion', 'fecha_nacimiento', 'email'].includes(field)
+        return ['primer_nombre', 'primer_apellido', 'numero_identificacion', 'email'].includes(field)
       } else if (currentTab === 1) {
         return ['empresa_final_id', 'fecha_fin', 'salario', 'moneda_custom'].includes(field)
       }
@@ -1314,7 +1311,7 @@ export default function ContractModal({
         tipo_identificacion: formData.tipo_identificacion,
         numero_identificacion: formData.numero_identificacion,
         fecha_expedicion_documento: formData.fecha_expedicion_documento || null,
-        fecha_nacimiento: formData.fecha_nacimiento,
+        fecha_nacimiento: formData.fecha_nacimiento?.trim() || null,
         celular: formData.celular || null,
         email: formData.email || null,
         empresa_interna: formData.empresa_interna,
@@ -1654,26 +1651,32 @@ export default function ContractModal({
 
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Fecha de Nacimiento *
+                      Fecha de Nacimiento
+                      {canEditResponsable && (
+                        <span className="text-gray-500 font-normal ml-1">(solo administrador)</span>
+                      )}
                     </label>
                     <input
                       type="date"
                       {...getDateLimits('birth')}
-                      value={formData.fecha_nacimiento}
+                      value={formData.fecha_nacimiento || ''}
                       onChange={(e) => {
-                        if (!isReadOnly) {
-                          // Permitir escribir sin validar hasta que el campo esté completo
+                        if (!isReadOnly && canEditResponsable) {
                           handleInputChange('fecha_nacimiento', e.target.value)
                         }
                       }}
                       onBlur={(e) => {
-                        // Validar solo cuando el usuario termine de escribir (onBlur)
-                        if (!isReadOnly && e.target.value) {
+                        if (!isReadOnly && canEditResponsable && e.target.value) {
                           validateDateInput(e.target.value, 'birth', true, true)
                         }
                       }}
+                      disabled={!canEditResponsable}
+                      readOnly={!canEditResponsable}
                       {...getInputProps('fecha_nacimiento', !!errors.fecha_nacimiento)}
                     />
+                    {!canEditResponsable && (
+                      <p className="text-gray-500 text-xs mt-1">Solo usuarios con permiso de administrador de contratos pueden editar este campo.</p>
+                    )}
                     {errors.fecha_nacimiento && (
                       <p className="text-red-600 text-xs mt-1">{errors.fecha_nacimiento}</p>
                     )}
