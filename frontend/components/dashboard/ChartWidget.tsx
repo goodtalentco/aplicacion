@@ -11,7 +11,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  LabelList
 } from 'recharts'
 
 interface ChartWidgetProps {
@@ -20,6 +21,8 @@ interface ChartWidgetProps {
   data: any[]
   height?: number
   colors?: string[]
+  /** Mostrar etiqueta con el total en cada barra */
+  showBarLabels?: boolean
 }
 
 /**
@@ -31,7 +34,8 @@ export default function ChartWidget({
   type,
   data,
   height = 300,
-  colors = ['#87E0E0', '#5FD3D2', '#58BFC2', '#004C4C', '#065C5C', '#0A6A6A']
+  colors = ['#87E0E0', '#5FD3D2', '#58BFC2', '#004C4C', '#065C5C', '#0A6A6A'],
+  showBarLabels = false
 }: ChartWidgetProps) {
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -79,7 +83,11 @@ export default function ChartWidget({
                 fill={colors[0]}
                 radius={[4, 4, 0, 0]}
                 className="hover:opacity-80 transition-opacity"
-              />
+              >
+                {showBarLabels && (
+                  <LabelList dataKey="value" position="top" className="fill-gray-700" style={{ fontSize: 12 }} />
+                )}
+              </Bar>
             </BarChart>
           ) : (
             <PieChart>
