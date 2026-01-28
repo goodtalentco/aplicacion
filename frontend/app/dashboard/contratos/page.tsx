@@ -57,7 +57,7 @@ export default function ContratosPage() {
     try {
       const { data, error } = await supabase
         .from('companies')
-        .select('id, name, tax_id')
+        .select('id, name, tax_id, organizacion')
         .eq('status', true)
         .is('archived_at', null)
         .order('name')

@@ -138,6 +138,7 @@ export interface Company {
   id: string
   name: string
   tax_id: string
+  organizacion?: 'Good' | 'CPS'
 }
 
 // Helpers para el estado del contrato

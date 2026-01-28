@@ -19,6 +19,7 @@ interface Company {
   id: string
   name: string
   tax_id: string
+  organizacion?: 'Good' | 'CPS'
 }
 
 interface ContractModalProps {
@@ -1059,17 +1060,14 @@ export default function ContractModal({
       }
     }
 
-    // Lógica especial para empresa_interna
+    // Al cambiar organización (Empresa Interna), limpiar empresa cliente seleccionada
     if (field === 'empresa_interna') {
-      if (value === 'temporal') {
-        // Si es Temporal y el tipo de contrato no es obra_o_labor, resetearlo
-        setFormData(prev => ({
-          ...prev,
-          empresa_interna: value,
-          tipo_contrato: prev.tipo_contrato !== 'obra_o_labor' ? '' : prev.tipo_contrato
-        }))
-        return // Salir temprano para evitar el setFormData de arriba
-      }
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        empresa_final_id: ''
+      }))
+      return
     }
   }
 
@@ -1734,8 +1732,8 @@ export default function ContractModal({
                       {...getInputProps('empresa_interna')}
                     >
                       <option value="">Seleccionar empresa interna...</option>
-                      <option value="temporal">Temporal</option>
-                      <option value="outsourcing">Outsourcing</option>
+                      <option value="Good">Good</option>
+                      <option value="CPS">CPS</option>
                     </select>
                     {errors.empresa_interna && (
                       <p className="text-red-600 text-xs mt-1">{errors.empresa_interna}</p>
@@ -1747,11 +1745,13 @@ export default function ContractModal({
                       Empresa Cliente *
                     </label>
                     <CompanySelector
-                      companies={companies}
+                      companies={formData.empresa_interna === 'Good' || formData.empresa_interna === 'CPS'
+                        ? companies.filter((c) => c.organizacion === formData.empresa_interna)
+                        : []}
                       selectedCompanyId={formData.empresa_final_id}
                       onCompanySelect={(companyId) => !isReadOnly && handleInputChange('empresa_final_id', companyId)}
-                      placeholder="Buscar y seleccionar empresa cliente..."
-                      disabled={isReadOnly}
+                      placeholder={formData.empresa_interna ? 'Buscar y seleccionar empresa cliente...' : 'Seleccione primero la empresa interna'}
+                      disabled={isReadOnly || !formData.empresa_interna}
                       error={!!errors.empresa_final_id}
                     />
                     {errors.empresa_final_id && (
@@ -1864,19 +1864,12 @@ export default function ContractModal({
                       {...getInputProps('tipo_contrato')}
                     >
                       <option value="">Seleccionar tipo de contrato...</option>
-                      {formData.empresa_interna === 'temporal' ? (
-                        // Solo Obra o Labor para empresa Temporal
-                        <option value="obra_o_labor">Obra o Labor</option>
-                      ) : (
-                        // Todas las opciones para otras empresas
-                        <>
-                          <option value="indefinido">Indefinido</option>
-                          <option value="fijo">Fijo</option>
-                          <option value="obra_o_labor">Obra o Labor</option>
-                          <option value="sena_universitario">SENA/Universitario</option>
-                          <option value="convenio_institucional">Convenio Institucional</option>
-                        </>
-                      )}
+                      <option value="indefinido">Indefinido</option>
+                      <option value="fijo">Fijo</option>
+                      <option value="obra_o_labor">Obra o Labor</option>
+                      <option value="sena_universitario">SENA/Universitario</option>
+                      <option value="convenio_institucional">Convenio Institucional</option>
+                      <option value="aprendizaje">Aprendizaje</option>
                     </select>
                     {errors.tipo_contrato && (
                       <p className="text-red-600 text-xs mt-1">{errors.tipo_contrato}</p>
