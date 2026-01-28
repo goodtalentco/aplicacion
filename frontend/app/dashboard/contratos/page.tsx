@@ -51,6 +51,7 @@ export default function ContratosPage() {
   const canCreate = hasPermission('contracts', 'create')
   const canUpdate = hasPermission('contracts', 'edit')
   const canDelete = hasPermission('contracts', 'delete')
+  const canEditResponsable = hasPermission('contracts', 'admin')
 
   // Cargar empresas para el dropdown de filtros
   const loadCompanies = async () => {
@@ -417,6 +418,120 @@ export default function ContratosPage() {
     console.log('Reportar novedad para contrato:', contract)
   }
 
+  // Descargar listado de contratos en CSV
+  const handleExportContractsToCSV = () => {
+    if (!canEditResponsable) return
+
+    const filtered = filteredContracts
+
+    if (filtered.length === 0) {
+      setToastType('info')
+      setToastMsg('No hay contratos para exportar')
+      setToastOpen(true)
+      return
+    }
+
+    // Preparar datos para CSV
+    const formatDate = (date: string | null | undefined) => {
+      if (!date) return ''
+      try {
+        const d = new Date(date)
+        return d.toLocaleDateString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' })
+      } catch {
+        return date
+      }
+    }
+
+    const formatCurrency = (value: number | null | undefined) => {
+      if (!value) return ''
+      return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value)
+    }
+
+    const headers = [
+      'Empleado',
+      'Tipo Identificación',
+      'Número Identificación',
+      'Email',
+      'Teléfono',
+      'Empresa Cliente',
+      'Empresa Interna',
+      'Cargo',
+      'Ciudad Labora',
+      'Tipo Contrato',
+      'Fecha Ingreso',
+      'Fecha Terminación',
+      'Tipo Salario',
+      'Salario Base',
+      'Total Remuneración',
+      'Moneda',
+      'Aporta SENA',
+      'Responsable Contratación',
+      'Estado Aprobación',
+      'Estado Vigencia'
+    ]
+
+    const rows = filtered.map(contract => {
+      const fullName = contract.contracts_full_name || `${contract.primer_nombre} ${contract.primer_apellido} ${contract.segundo_apellido || ''}`.trim()
+      const statusConfig = getContractStatusConfig(contract)
+      const statusVigencia = getStatusVigencia(contract.fecha_fin)
+      const totalRemuneration = (contract.salario || 0) + 
+        (contract.auxilio_salarial || 0) + 
+        (contract.auxilio_no_salarial || 0) +
+        (contract.auxilio_transporte || 0)
+
+      return [
+        fullName,
+        contract.tipo_identificacion || '',
+        contract.numero_identificacion || '',
+        contract.email || '',
+        contract.celular || '',
+        contract.company?.name || '',
+        contract.empresa_interna || '',
+        contract.cargo || '',
+        contract.ciudad_labora || '',
+        contract.tipo_contrato || '',
+        formatDate(contract.fecha_ingreso),
+        formatDate(contract.fecha_fin),
+        contract.tipo_salario || '',
+        formatCurrency(contract.salario),
+        formatCurrency(totalRemuneration),
+        contract.moneda || 'COP',
+        contract.base_sena ? 'Sí' : 'No',
+        contract.responsable_contratacion_handle || 'Sin asignar',
+        statusConfig.status_aprobacion || '',
+        statusVigencia || ''
+      ]
+    })
+
+    // Crear CSV
+    const escapeCSV = (value: string) => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}"`
+      }
+      return value
+    }
+
+    const csvContent = [
+      headers.map(escapeCSV).join(','),
+      ...rows.map(row => row.map(cell => escapeCSV(String(cell || ''))).join(','))
+    ].join('\n')
+
+    // Descargar archivo
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `contratos_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setToastType('success')
+    setToastMsg(`Se exportaron ${filtered.length} contratos exitosamente`)
+    setToastOpen(true)
+  }
+
   const handleEdit = (contract: Contract) => {
     if (!canUpdate) return
     setEditingContract(contract)
@@ -521,6 +636,16 @@ export default function ContratosPage() {
                 <span className="hidden sm:inline">Importar</span>
               </button>
             </>
+          )}
+          {canEditResponsable && (
+            <button
+              onClick={handleExportContractsToCSV}
+              className="px-4 py-2 bg-gradient-to-r from-[#0A6A6A] to-[#5FD3D2] text-white rounded-xl font-medium hover:from-[#065C5C] hover:to-[#0A6A6A] transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+              title="Descargar listado de contratos (CSV)"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Descargar Listado</span>
+            </button>
           )}
         </div>
       </div>
