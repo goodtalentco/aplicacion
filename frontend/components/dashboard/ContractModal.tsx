@@ -1652,9 +1652,6 @@ export default function ContractModal({
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Fecha de Nacimiento
-                      {canEditResponsable && (
-                        <span className="text-gray-500 font-normal ml-1">(solo administrador)</span>
-                      )}
                     </label>
                     <input
                       type="date"
