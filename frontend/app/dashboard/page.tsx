@@ -149,7 +149,8 @@ export default function DashboardPage() {
           const fullName = [c.primer_nombre, c.segundo_nombre, c.primer_apellido, c.segundo_apellido].filter(Boolean).join(' ').trim()
           return { ...c, fullName: fullName || 'Sin nombre' }
         })
-        const ordenados = conNombre.sort((a: { updated_at?: string }, b: { updated_at?: string }) => {
+        type ContractWithName = Record<string, unknown> & { fullName: string; updated_at?: string; created_at?: string }
+        const ordenados = (conNombre as ContractWithName[]).sort((a, b) => {
           const ta = a.updated_at ? new Date(a.updated_at).getTime() : 0
           const tb = b.updated_at ? new Date(b.updated_at).getTime() : 0
           return tb - ta
