@@ -142,6 +142,7 @@ export default function OnboardingDetailModal({
   // Resetear formulario cuando cambia el modal
   useEffect(() => {
     if (isOpen && data.contract) {
+      // Cesantías y Pensión: siempre exigir selección (no pre-llenar; evita que aparezca el valor del otro)
       setText('')
       setDate(new Date().toISOString().split('T')[0]) // Fecha actual por defecto
       
@@ -349,10 +350,11 @@ export default function OnboardingDetailModal({
             </div>
           )}
 
-          {/* Autocomplete (EPS/Cesantías/Pensión) */}
+          {/* Autocomplete (EPS/Cesantías/Pensión) - key por tipo para no compartir valor entre cesantías y pensión */}
           {config.isDropdown && config.dropdownTable && (
             <div>
               <AutocompleteSelect
+                key={`${data.type}-${data.field}`}
                 tableName={config.dropdownTable}
                 selectedValue={text}
                 onSelect={(value) => setText(value)}

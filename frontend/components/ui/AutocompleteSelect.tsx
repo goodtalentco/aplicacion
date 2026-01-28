@@ -47,10 +47,10 @@ export default function AutocompleteSelect({
     loadItems()
   }, [tableName])
 
-  // Sincronizar input con valor seleccionado
+  // Sincronizar input con valor seleccionado (incluir vacío para no arrastrar valor de otro modal)
   useEffect(() => {
-    if (selectedValue && !isOpen) {
-      setInputValue(selectedValue)
+    if (!isOpen) {
+      setInputValue(selectedValue || '')
     }
   }, [selectedValue, isOpen])
 

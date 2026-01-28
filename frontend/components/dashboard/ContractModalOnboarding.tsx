@@ -573,8 +573,7 @@ export default function ContractModalOnboarding({
               onChange={(e) => {
                 if (!isReadOnly && formData.solicitud_cesantias) {
                   if (e.target.checked) {
-                    // Si se marca, inicializar campos con valores por defecto para que aparezcan
-                    if (!formData.fondo_cesantias) handleInputChange('fondo_cesantias', ' ') // Espacio para activar
+                    // Si se marca, no pre-llenar: el usuario debe seleccionar siempre el fondo y la fecha
                     if (!formData.cesantias_fecha_confirmacion) handleInputChange('cesantias_fecha_confirmacion', new Date().toISOString().split('T')[0])
                   } else {
                     // Si se desmarca, limpiar datos
@@ -600,10 +599,7 @@ export default function ContractModalOnboarding({
               Cesantías Confirmadas
             </label>
           </div>
-          {(formData.solicitud_cesantias && (
-            (typeof formData.fondo_cesantias === 'string' && formData.fondo_cesantias.trim()) || 
-            formData.cesantias_fecha_confirmacion
-          )) && (
+          {formData.solicitud_cesantias && (
             <>
               <div>
                 <AuxiliaryDropdown
@@ -680,8 +676,7 @@ export default function ContractModalOnboarding({
               onChange={(e) => {
                 if (!isReadOnly && formData.solicitud_fondo_pension) {
                   if (e.target.checked) {
-                    // Si se marca, inicializar campos con valores por defecto para que aparezcan
-                    if (!formData.fondo_pension) handleInputChange('fondo_pension', ' ') // Espacio para activar
+                    // Si se marca, no pre-llenar: el usuario debe seleccionar siempre el fondo y la fecha
                     if (!formData.pension_fecha_confirmacion) handleInputChange('pension_fecha_confirmacion', new Date().toISOString().split('T')[0])
                   } else {
                     // Si se desmarca, limpiar datos
@@ -707,10 +702,7 @@ export default function ContractModalOnboarding({
               Pensión Confirmada
             </label>
           </div>
-          {(formData.solicitud_fondo_pension && (
-            (typeof formData.fondo_pension === 'string' && formData.fondo_pension.trim()) || 
-            formData.pension_fecha_confirmacion
-          )) && (
+          {formData.solicitud_fondo_pension && (
             <>
               <div>
                 <AuxiliaryDropdown
