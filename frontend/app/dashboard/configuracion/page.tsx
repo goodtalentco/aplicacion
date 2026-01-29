@@ -551,9 +551,9 @@ export default function ConfiguracionPage() {
       {/* Grid de tarjetas de configuración */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Tarjeta 1: Resumen Diario de Contratación - solo para canManageUsers */}
+        {/* Tarjeta 1: Resumen Diario de Contratación - mismo ancho que Gestión/Tablas */}
         {canManageUsers() && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
           {/* Header con gradiente (mismo estilo que Gestión/Tablas) */}
           <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
@@ -795,9 +795,9 @@ export default function ConfiguracionPage() {
         </div>
         )}
 
-        {/* Tarjeta 2: Notificaciones de Vencimiento - solo para canManageUsers */}
+        {/* Tarjeta 2: Notificaciones de Vencimiento - mismo ancho que Gestión/Tablas */}
         {canManageUsers() && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
           {/* Header con gradiente (mismo estilo que Gestión/Tablas) */}
           <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
