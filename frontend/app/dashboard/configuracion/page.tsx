@@ -554,8 +554,8 @@ export default function ConfiguracionPage() {
         {/* Tarjeta 1: Resumen Diario de Contratación - solo para canManageUsers */}
         {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header con gradiente */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white relative overflow-hidden">
+          {/* Header con gradiente (mismo estilo que Gestión/Tablas) */}
+          <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <FileText className="w-8 h-8" />
@@ -574,34 +574,12 @@ export default function ConfiguracionPage() {
               <p className="text-sm opacity-90 mb-3">
                 Configuración de resúmenes diarios de contrataciones pendientes
               </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm">{dailyRecipientEmails.length} email{dailyRecipientEmails.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {dailyIsEnabled ? (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm">Activo</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4" />
-                      <span className="text-sm">Inactivo</span>
-                    </>
-                  )}
-                </div>
-              </div>
             </div>
-            {/* Patrón decorativo */}
             <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
             <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
           </div>
-
-          {/* Contenido expandible */}
           {dailyExpanded && (
-            <div className="p-6 space-y-6">
+            <div className="p-6 border-t border-gray-200 space-y-6">
               {/* Emails Destinatarios */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -820,8 +798,8 @@ export default function ConfiguracionPage() {
         {/* Tarjeta 2: Notificaciones de Vencimiento - solo para canManageUsers */}
         {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header con gradiente */}
-          <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white relative overflow-hidden">
+          {/* Header con gradiente (mismo estilo que Gestión/Tablas) */}
+          <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <Bell className="w-8 h-8" />
@@ -840,38 +818,12 @@ export default function ConfiguracionPage() {
               <p className="text-sm opacity-90 mb-3">
                 Configuración de notificaciones automáticas para contratos próximos a vencer
               </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm">{expirationRecipientEmails.length} email{expirationRecipientEmails.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm">{expirationDaysBefore.length} día{expirationDaysBefore.length !== 1 ? 's' : ''} configurado{expirationDaysBefore.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {expirationIsEnabled ? (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm">Activo</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4" />
-                      <span className="text-sm">Inactivo</span>
-                    </>
-                  )}
-                </div>
-              </div>
             </div>
-            {/* Patrón decorativo */}
             <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white bg-opacity-10"></div>
             <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white bg-opacity-10"></div>
           </div>
-
-          {/* Contenido expandible */}
           {expirationExpanded && (
-            <div className="p-6 space-y-6">
+            <div className="p-6 border-t border-gray-200 space-y-6">
               {/* Emails Destinatarios */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -1154,10 +1106,10 @@ export default function ConfiguracionPage() {
         </div>
         )}
 
-        {/* Tarjeta 3: Gestión de Usuarios - solo para canManageUsers */}
+        {/* Tarjeta 3: Gestión de Usuarios - color armónico distinto */}
         {canManageUsers() && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
-          <div className="bg-gradient-to-r from-[#065C5C] to-[#0A6A6A] p-6 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 p-6 text-white relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <Users className="w-8 h-8" />
@@ -1188,10 +1140,10 @@ export default function ConfiguracionPage() {
         </div>
         )}
 
-        {/* Tarjeta 4: Tablas Auxiliares */}
+        {/* Tarjeta 4: Tablas Auxiliares - mismo color que Gestión de Usuarios */}
         {canManageAuxTables() && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden lg:col-span-2">
-            <div className="bg-gradient-to-r from-[#065C5C] to-[#0A6A6A] p-6 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 p-6 text-white relative overflow-hidden">
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <Database className="w-8 h-8" />
