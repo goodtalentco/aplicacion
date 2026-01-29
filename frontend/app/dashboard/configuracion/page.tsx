@@ -1175,23 +1175,6 @@ export default function ConfiguracionPage() {
         )}
       </div>
 
-      {/* Información Adicional */}
-      <div className="bg-blue-50 rounded-2xl border border-blue-200 p-6">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 mb-2">Nota Importante</h3>
-            <p className="text-sm text-blue-800 mb-3">
-              El envío automático requiere que esté configurado pg_cron en Supabase. 
-              Si no está configurado, solo podrás enviar notificaciones manualmente.
-            </p>
-            <p className="text-xs text-blue-700">
-              Las notificaciones de vencimiento se enviarán a los emails configurados cuando un contrato esté próximo a vencer según los días configurados.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Notification Modal */}
       <NotificationModal
         isOpen={notification.isOpen}
