@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Loader2,
   Save,
-  History
+  History,
+  User
 } from 'lucide-react'
 
 interface EditUserPermissionsModalProps {
@@ -25,6 +26,7 @@ interface EditUserPermissionsModalProps {
   user: {
     id: string
     email: string
+    display_name?: string | null
   } | null
 }
 
@@ -54,6 +56,7 @@ export default function EditUserPermissionsModal({
 }: EditUserPermissionsModalProps) {
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([])
   const [changes, setChanges] = useState<PermissionChange[]>([])
+  const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -62,6 +65,7 @@ export default function EditUserPermissionsModal({
 
   useEffect(() => {
     if (isOpen && user) {
+      setDisplayName(user.display_name ?? '')
       fetchUserPermissions()
     }
   }, [isOpen, user])
@@ -162,8 +166,11 @@ export default function EditUserPermissionsModal({
     })
   }
 
+  const displayNameChanged = displayName.trim() !== (user?.display_name ?? '').trim()
+  const hasAnyChanges = changes.length > 0 || displayNameChanged
+
   const handleSave = async () => {
-    if (changes.length === 0) {
+    if (!hasAnyChanges) {
       onClose()
       return
     }
@@ -172,10 +179,19 @@ export default function EditUserPermissionsModal({
       setSaving(true)
       setError('')
 
+      // Actualizar nombre para mostrar si cambió
+      if (displayNameChanged) {
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({ display_name: displayName.trim() || null })
+          .eq('user_id', user!.id)
+        if (updateError) throw new Error(updateError.message)
+      }
+
       const currentUser = await supabase.auth.getUser()
       const assignedBy = currentUser.data.user?.id
 
-      if (!assignedBy) {
+      if (!assignedBy && changes.length > 0) {
         throw new Error('Usuario no autenticado')
       }
 
@@ -222,7 +238,11 @@ export default function EditUserPermissionsModal({
     }
   }
 
-  const getChangesCount = () => changes.length
+  const getChangesCount = () => {
+    let count = changes.length
+    if (displayNameChanged) count += 1
+    return count
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2 sm:p-4">
@@ -254,7 +274,24 @@ export default function EditUserPermissionsModal({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
           {/* Changes Summary */}
-          {changes.length > 0 && (
+          {/* Nombre para mostrar */}
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 border border-gray-200 rounded-lg bg-white flex-shrink-0">
+            <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+              <User className="w-4 h-4 text-[#004C4C]" />
+              <span>Nombre para mostrar</span>
+            </label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Ej: Juan Pérez"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5FD3D2] focus:border-transparent text-sm"
+              disabled={saving}
+            />
+            <p className="text-xs text-gray-500 mt-1">Nombre visible en la interfaz (lista de usuarios, etc.)</p>
+          </div>
+
+          {hasAnyChanges && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg flex-shrink-0">
               <div className="flex items-center space-x-2 mb-2">
                 <History className="w-4 h-4 text-blue-600" />
@@ -263,6 +300,9 @@ export default function EditUserPermissionsModal({
                 </span>
               </div>
               <div className="space-y-1 max-h-20 overflow-y-auto">
+                {displayNameChanged && (
+                  <div className="text-xs text-blue-700">Nombre para mostrar</div>
+                )}
                 {changes.map((change, index) => (
                   <div key={index} className="text-xs text-blue-700">
                     {change.will_be_active ? '✓ Activar' : '✗ Desactivar'} {change.table_name}.{change.action}
@@ -386,7 +426,7 @@ export default function EditUserPermissionsModal({
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving || changes.length === 0}
+                disabled={saving || !hasAnyChanges}
                 className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-[#5FD3D2] to-[#58BFC2] text-white rounded-lg hover:from-[#58BFC2] hover:to-[#5FD3D2] transition-all disabled:opacity-50 font-medium"
               >
                 {saving ? (

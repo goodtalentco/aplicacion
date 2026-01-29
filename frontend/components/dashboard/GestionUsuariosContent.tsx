@@ -450,7 +450,7 @@ export default function GestionUsuariosContent({ embedded = false }: GestionUsua
             window.location.reload()
           }
         }}
-        user={selectedUser ? { id: selectedUser.user_id, email: selectedUser.alias } : null}
+        user={selectedUser ? { id: selectedUser.user_id, email: selectedUser.alias, display_name: selectedUser.display_name } : null}
       />
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
